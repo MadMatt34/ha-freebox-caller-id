@@ -1,6 +1,6 @@
 {
   "domain": "freebox_caller_id",
-  "name": "Freebox Caller ID Instant",
+  "name": "Freebox Caller ID",
   "documentation": "https://github.com/home-assistant",
   "dependencies": [],
   "codeowners": [],
