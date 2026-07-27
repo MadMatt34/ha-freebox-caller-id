@@ -17,10 +17,7 @@ action:
     target:
       entity_id: media_player.salon
 
-    > Données disponibles dans trigger.event.data :
-
-{{ trigger.event.data.number }} : Numéro de téléphone de l'appelant.
-
-{{ trigger.event.data.name }} : Nom associé dans le répertoire (ou "Inconnu").
-
-{{ trigger.event.data.id }} : Identifiant unique de l'appel Freebox.
+> Données disponibles dans trigger.event.data :
+> {{ trigger.event.data.number }} : Numéro de téléphone de l'appelant.
+> {{ trigger.event.data.name }} : Nom associé dans le répertoire (ou "Inconnu").
+> {{ trigger.event.data.id }} : Identifiant unique de l'appel Freebox.
