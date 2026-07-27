@@ -1,21 +1,23 @@
-# Freebox Caller ID Instant - Intégration Custom Home Assistant
+# Freebox Caller ID - Intégration pour Home Assistant
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
 [![Version](https://img.shields.io/badge/version-1.1.0-green.svg)](https://github.com/)
 
-**Freebox Caller ID Instant** est un composant personnalisé (*custom component*) pour Home Assistant permettant de détecter **en temps réel** les appels téléphoniques entrants sur la ligne fixe de votre Freebox, sans ajouter de matériel supplémentaire (comme un modem USB Caller ID).
+**Freebox Caller ID** est une intégration personnalisée pour Home Assistant permettant de détecter **en temps réel** les appels téléphoniques entrants sur la ligne fixe de votre Freebox, sans ajout de matériel supplémentaire.
+
+*Inspiré de [https://github.com/jystervinou/freebox-caller-id](https://github.com/jystervinou/freebox-caller-id)*
 
 ---
 
 ## 📌 Objectif
 
-Par défaut, l'API Freebox OS n'émet pas de push WebSocket lorsqu'un téléphone sonne. Cependant, la Freebox inscrit immédiatement l'appel entrant dans son registre (`/api/v4/call/log/`) dès la première sonnerie avec une durée égale à `0`. 
+Par défaut, l'API Freebox OS n'émet aucun push lorsqu'un téléphone sonne. Cependant, la Freebox inscrit immédiatement l'appel entrant dans son registre (`/api/v4/call/log/`) dès la première sonnerie avec une durée égale à `0`. 
 
-Cette intégration effectue un balayage HTTP rapide et asynchrone (polling toutes les 2 secondes par défaut) pour :
+Cette intégration effectue un scan HTTP rapide et asynchrone (polling toutes les 2 secondes par défaut) pour :
 1. Déclencher un **événement natif** (`freebox_incoming_call`) dès le premier signal de sonnerie.
-2. Activer un **capteur binaire** (`binary_sensor.sonnerie_freebox`) pendant toute la durée où le téléphone sonne.
-3. Conserver les données de l'appelant dans un **capteur dédié** (`sensor.dernier_appel_freebox`).
-4. Fonctionne en **local**, sans cloud
+2. Activer un **capteur binaire** (`binary_sensor.sonnerie_freebox`) pendant toute la durée où le téléphone sonne, avec les informations de l'appelant.
+3. Conserver les données de l'appelant dans un **capteur dédié** (`sensor.dernier_appel_freebox`), et l'historique des 10 derniers appels.
+4. Fonctionner en **local**, sans cloud
 5. Gérer de manière transparente les redémarrages de la Freebox grâce à un algorithme de **reconnexion progressive (*exponential backoff*)** pour ne pas polluer les journaux de Home Assistant.
 
 ---
@@ -42,34 +44,36 @@ config/
 
 ## 🧩 Installation via HACS
 
-1. Ouvrir **HACS → Intégrations**  
+### Installation via HACS
+1. Ouvrir **HACS**  
 2. Cliquer sur **Ajouter un dépôt personnalisé**  
 3. Ajouter : https://github.com/MadMatt34/ha-freebox-caller-id
 4. Choisir la catégorie **Intégration**  
-5. Installer l’intégration  
 6. Redémarrer Home Assistant
 
-## 🚀 Installation & Configuration
-
-L'installation se fait **100 % via l'interface graphique** de Home Assistant (aucun fichier `configuration.yaml` ni commande `curl` n'est nécessaire).
-
-### Étape 1 : Copie des fichiers & Redémarrage
+### Installation manuelle
 1. Copiez le dossier `freebox_caller_id` dans `/config/custom_components/`.
 2. Redémarrez Home Assistant pour faire détecter la nouvelle intégration.
 
-### Étape 2 : Ajout de l'intégration dans Home Assistant
+---
+
+## 🚀 Configuration de l'intégration
+
+L'installation se fait **100 % via l'interface graphique** de Home Assistant.
+
+### Étape 1 : Ajout de l'intégration dans Home Assistant
 1. Dans Home Assistant, allez dans **Paramètres** > **Appareils et services**.
 2. Cliquez sur **Ajouter une intégration** (en bas à droite).
-3. Recherchez **Freebox Caller ID Instant** et sélectionnez-le.
+3. Recherchez **Freebox Caller ID** et sélectionnez-le.
 4. Laissez l'adresse IP / hôte par défaut (`mafreebox.freebox.fr`) et validez.
 
-### Étape 3 : Validation physique sur le Freebox Server
+### Étape 2 : Validation physique sur le Freebox Server
 1. L'assistant vous demande d'accorder l'autorisation.
-2. Rendez-vous devant votre boîtier **Freebox Server** (Server physique).
+2. Rendez-vous devant votre boîtier **Freebox Server** (physiquement).
 3. Appuyez sur la **flèche de droite** (ou la touche de validation) sur l'écran tactile du boîtier pour accepter la demande **HA CallerID**.
 4. Revenez sur Home Assistant et cliquez sur **Soumettre**.
 
-### Étape 4 : Autorisation dans l'interface Freebox OS
+### Étape 3 : Autorisation dans l'interface Freebox OS
 1. Connectez-vous sur votre espace Freebox OS : [http://mafreebox.freebox.fr](http://mafreebox.freebox.fr).
 2. Allez dans **Paramètres de la Freebox** > **Gestion des accès** > Onglet **Applications**.
 3. Cliquez sur la ligne **HA CallerID**.
@@ -182,9 +186,32 @@ action:
 
 ---
 
+### Exemple 3 : Affichage des derniers appels reçus
+Une carte d'historique sur votre tableau de bord Home Assistant en utilisant une carte Markdown :
+
+```yaml
+type: markdown
+title: "📜 Historique des derniers appels Freebox"
+content: >
+  {% set calls = state_attr('sensor.dernier_appel_freebox', 'calls') %}
+  | Nom / Numéro | Type | Durée |
+  | :--- | :--- | :--- |
+  {% for call in calls %}
+  | **{{ call.name }}** <br><sub>{{ call.number }}</sub> | {{ call.type }} | {{ call.duration }}s |
+  {% endfor %}
+```
+
+---
+
 ## 🛡️ Robustesse et Gestion des Erreurs
 
 En cas de redémarrage de la Freebox ou de mise à jour du firmware :
 - Un avertissement unique est inscrit dans les journaux de Home Assistant lors de la perte de communication.
 - L'intégration bascule en mode **Backoff Exponentiel** (`2s -> 4s -> 8s -> 16s -> 32s -> 60s`).
 - Dès le retour en ligne de la Freebox, la session est automatiquement ré-authentifiée et l'intervalle de balayage d'origine est rétabli, sans nécessiter de redémarrage de Home Assistant.
+
+## 🛠️ Dépannage
+
+- Vérifiez que votre Freebox est accessible sur le réseau local
+- Assurez-vous que Home Assistant peut communiquer avec la Freebox
+- Consultez les logs : **Paramètres → Système → Journaux**
