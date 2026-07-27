@@ -1,5 +1,8 @@
 # ha-freebox-caller-id
 
+5.Donner le droit de lire les appels :Dans Freebox OS.Connectez-vous sur mafreebox.freebox.fr. Allez dans Paramètres > Gestion des accès > Applications, éditez HA CallerID et cochez absolument Accès au journal d'appels.
+
+
 alias: "Freebox - Action sur Appel Entrant"
 description: "Se déclenche instantanément dès que le téléphone fixe sonne"
 trigger:
