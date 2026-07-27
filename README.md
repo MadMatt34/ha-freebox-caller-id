@@ -47,14 +47,14 @@ config/
 
 ## 🧩 Installation
 
-### Installation via HACS
+### Option 1 : Installation via HACS (recommandée)
 1. Ouvrir **HACS**  
 2. Cliquer sur **Ajouter un dépôt personnalisé**  
 3. Ajouter : https://github.com/MadMatt34/ha-freebox-caller-id
 4. Choisir la catégorie **Intégration**  
 6. Redémarrer Home Assistant
 
-### Installation manuelle
+### Option 2 : Installation manuelle
 1. Copiez le dossier `freebox_caller_id` dans `/config/custom_components/`.
 2. Redémarrez Home Assistant pour faire détecter la nouvelle intégration.
 
