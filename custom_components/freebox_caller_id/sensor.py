@@ -16,12 +16,13 @@ class FreeboxLastCallSensor(CoordinatorEntity, SensorEntity):
     """Entité stockant le dernier appel et l'historique des 10 derniers appels."""
 
     _attr_has_entity_name = True
-    _attr_name = "Dernier appel"
+    _attr_translation_key = "last_call"
 
     def __init__(self, coordinator, entry):
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_last_call"
         self._attr_icon = "mdi:phone-log"
+        self._entry = entry
 
         # Regroupement sous le MÊME Appareil dans Home Assistant
         host = entry.data.get(CONF_HOST, "mafreebox.freebox.fr")
