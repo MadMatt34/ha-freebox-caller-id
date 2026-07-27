@@ -3,7 +3,7 @@
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
 [![Version](https://img.shields.io/badge/version-1.1.0-green.svg)](https://github.com/)
 
-![Freebox Caller ID for Home Assistant](https://github.com/MadMatt34/ha-freebox-caller-id/logo.png)
+![Freebox Caller ID for Home Assistant](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/logo.png)
 
 > # :warning: !! WORK IN PROGRESS !! :warning:
 
