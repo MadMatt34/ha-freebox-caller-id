@@ -21,6 +21,16 @@
     },
     "abort": {
       "already_configured": "Cette Freebox est déjà configurée."
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configuration Freebox Caller ID",
+        "description": "Ajustez la fréquence à laquelle Home Assistant interroge la Freebox.\nUn balayage trop rapide (ex: 1s) réagit plus vite mais peut surcharger la box. 2 secondes est un bon équilibre.",
+        "data": {
+          "scan_interval": "Fréquence de balayage (en secondes)"
+        }
+      }
     }
   }
 }
