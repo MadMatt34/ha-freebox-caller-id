@@ -1,57 +1,37 @@
-# ha-freebox-caller-id
+readme_content = """# Freebox Caller ID Instant - Intégration Custom Home Assistant
 
-5.Donner le droit de lire les appels :Dans Freebox OS.Connectez-vous sur mafreebox.freebox.fr. Allez dans Paramètres > Gestion des accès > Applications, éditez HA CallerID et cochez absolument Accès au journal d'appels.
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
+[![Version](https://img.shields.io/badge/version-1.1.0-green.svg)](https://github.com/)
 
+**Freebox Caller ID Instant** est un composant personnalisé (*custom component*) pour Home Assistant permettant de détecter **en temps réel** les appels téléphoniques entrants sur la ligne fixe de votre Freebox, sans ajouter de matériel supplémentaire (comme un modem USB Caller ID).
 
-alias: "Freebox - Action sur Appel Entrant"
-description: "Se déclenche instantanément dès que le téléphone fixe sonne"
-trigger:
-  - platform: event
-    event_type: freebox_incoming_call
-action:
-  # 1. Envoie une notification mobile
-  - action: notify.notify
-    data:
-      title: "📞 Appel entrant Freebox !"
-      message: "Appel de {{ trigger.event.data.name }} ({{ trigger.event.data.number }})"
+---
 
-  # 2. Exemple d'action supplémentaire : pause du lecteur multimédia
-  - action: media_player.media_pause
-    target:
-      entity_id: media_player.salon
+## 📌 Objectif
 
-> Données disponibles dans trigger.event.data :
-> 
-> {{ trigger.event.data.number }} : Numéro de téléphone de l'appelant.
-> {{ trigger.event.data.name }} : Nom associé dans le répertoire (ou "Inconnu").
-> {{ trigger.event.data.id }} : Identifiant unique de l'appel Freebox.
+Par défaut, l'API Freebox OS n'émet pas de push WebSocket lorsqu'un téléphone sonne. Cependant, la Freebox inscrit immédiatement l'appel entrant dans son registre (`/api/v4/call/log/`) dès la première sonnerie avec une durée égale à `0`. 
 
-alias: "Freebox - Baisse du son pendant la sonnerie"
-trigger:
-  - platform: state
-    entity_id: binary_sensor.sonnerie_freebox
-    to: "on"
-action:
-  # Action 1: On met la musique en pause quand ça commence à sonner
-  - service: media_player.media_pause
-    target:
-      entity_id: media_player.salon
-  
-  # Action 2: On annonce qui appelle sur l'enceinte
-  - service: tts.speak
-    target:
-      entity_id: tts.google_en_com
-    data:
-      media_player_entity_id: media_player.salon
-      message: "Appel entrant de {{ state_attr('binary_sensor.sonnerie_freebox', 'caller_name') }}"
-      
-  # Action 3: On attend que la sonnerie s'arrête (décroché ou manqué)
-  - wait_for_trigger:
-      - platform: state
-        entity_id: binary_sensor.sonnerie_freebox
-        to: "off"
-        
-  # Action 4: On remet la musique
-  - service: media_player.media_play
-    target:
-      entity_id: media_player.salon
+Cette intégration effectue un balayage HTTP rapide et asynchrone (polling toutes les 2 secondes par défaut) pour :
+1. Déclencher un **événement natif** (`freebox_incoming_call`) dès le premier signal de sonnerie.
+2. Activer un **capteur binaire** (`binary_sensor.sonnerie_freebox`) pendant toute la durée où le téléphone sonne.
+3. Conserver les données de l'appelant dans un **capteur dédié** (`sensor.dernier_appel_freebox`).
+4. Gérer de manière transparente les redémarrages de la Freebox grâce à un algorithme de **reconnexion progressive (*exponential backoff*)** pour ne pas polluer les journaux de Home Assistant.
+
+---
+
+## 🛠️ Structure des fichiers
+
+Dans votre dossier Home Assistant `/config/custom_components/freebox_caller_id/`, assurez-vous d'avoir l'arborescence suivante :
+
+```text
+config/
+└── custom_components/
+    └── freebox_caller_id/
+        ├── __init__.py
+        ├── binary_sensor.py
+        ├── config_flow.py
+        ├── const.py
+        ├── manifest.json
+        ├── sensor.py
+        └── translations/
+            └── fr.json
