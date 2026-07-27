@@ -1,0 +1,14 @@
+{
+  "entity": {
+    "sensor": {
+      "last_call": {
+        "name": "Last call"
+      }
+    },
+    "binary_sensor": {
+      "ringing": {
+        "name": "Ringing"
+      }
+    }
+  }
+}
