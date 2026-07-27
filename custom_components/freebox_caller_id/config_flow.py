@@ -3,6 +3,7 @@ import logging
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
+from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
@@ -37,7 +38,6 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self.host = user_input[CONF_HOST]
             session = async_get_clientsession(self.hass)
             
-            # Demande d'autorisation à la Freebox
             payload = {
                 "app_id": APP_ID,
                 "app_name": APP_NAME,
@@ -72,7 +72,6 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             session = async_get_clientsession(self.hass)
             try:
-                # Vérification du statut d'autorisation
                 async with session.get(f"http://{self.host}/api/v4/login/authorize/{self.track_id}") as resp:
                     data = await resp.json()
                     status = data["result"]["status"]
@@ -103,24 +102,25 @@ class FreeboxCallerIDOptionsFlow(config_entries.OptionsFlow):
     """Gère les options via le bouton Configurer de l'UI."""
 
     async def async_step_init(self, user_input=None):
-        """Gère le formulaire des options."""
+        """Gère le formulaire des options sous forme de champ numérique."""
         if user_input is not None:
-            # Sauvegarde les nouvelles options et ferme la fenêtre
             return self.async_create_entry(title="", data=user_input)
 
-        # Récupère l'intervalle actuel (soit depuis les options, soit depuis la config initiale, soit par défaut)
         current_interval = self.config_entry.options.get(
             CONF_SCAN_INTERVAL, 
             self.config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         )
 
-        # Affiche le formulaire avec un slider / champ numérique (min 1 sec, max 60 sec)
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema({
-                vol.Required(
-                    CONF_SCAN_INTERVAL, 
-                    default=current_interval
-                ): vol.All(vol.Coerce(int), vol.Range(min=1, max=60))
+                vol.Required(CONF_SCAN_INTERVAL, default=current_interval): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=1,
+                        max=60,
+                        step=1,
+                        mode=selector.NumberSelectorMode.BOX,
+                    )
+                )
             })
         )
