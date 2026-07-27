@@ -173,27 +173,32 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 else:
                     data = await resp.json()
 
+# ... [Gardez tout le début de _async_update_data inchangé jusqu'à la récupération de data] ...
+
             if not data.get("success"):
                 self._handle_failure("Réponse API invalide")
 
-            # La requête a réussi
             self._handle_success()
 
-            last_call = data["result"][0] if data.get("result") else {}
-            if not last_call:
+            calls_result = data.get("result", [])
+            if not calls_result:
                 return {}
+
+            # Récupère les 10 derniers appels de la liste Freebox
+            last_10_calls = calls_result[:10]
+            
+            # Le tout dernier appel (pour l'état principal et le binaire)
+            last_call = last_10_calls[0]
 
             call_id = last_call.get("id")
             duration = last_call.get("duration", 0)
             call_time = last_call.get("datetime", time.time())
 
             is_ringing = False
-            
-            # Détermine si le téléphone sonne (durée=0 et appel < 45s)
             if duration == 0 and (time.time() - call_time) < 45:
                 is_ringing = True
 
-            # Déclenche l'événement lors d'un NOUVEL appel
+            # Déclenchement de l'événement pour un nouveau coup de fil
             if self._last_notified_call_id is None:
                 self._last_notified_call_id = call_id
             elif call_id != self._last_notified_call_id and is_ringing:
@@ -207,6 +212,19 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 }
                 self.hass.bus.async_fire(EVENT_INCOMING_CALL, event_data)
 
+            # Formate la liste propre des 10 derniers appels pour les attributs
+            formatted_calls = [
+                {
+                    "id": c.get("id"),
+                    "number": c.get("number"),
+                    "name": c.get("name") or "Inconnu",
+                    "type": c.get("type"),
+                    "duration": c.get("duration", 0),
+                    "timestamp": c.get("datetime")
+                }
+                for c in last_10_calls
+            ]
+
             return {
                 "is_ringing": is_ringing,
                 "caller_name": last_call.get("name") or "Inconnu",
@@ -215,6 +233,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 "duration": duration,
                 "datetime": call_time,
                 "id": call_id,
+                "recent_calls": formatted_calls # <--- La liste des 10 appels
             }
 
         except (aiohttp.ClientError, asyncio.TimeoutError) as err:
