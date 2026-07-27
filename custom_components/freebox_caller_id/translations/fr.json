@@ -1,15 +1,13 @@
 {
-  {
-    "entity": {
-      "sensor": {
-        "last_call": {
-          "name": "Dernier appel"
-        }
-      },
-      "binary_sensor": {
-        "ringing": {
-          "name": "Sonnerie"
-        }
+  "entity": {
+    "sensor": {
+      "last_call": {
+        "name": "Dernier appel"
+      }
+    },
+    "binary_sensor": {
+      "ringing": {
+        "name": "Sonnerie"
       }
     }
   },
@@ -35,15 +33,15 @@
     },
     "abort": {
       "already_configured": "Cette Freebox est déjà configurée."
-    },
-    "options": {
-      "step": {
-        "init": {
-          "title": "Configuration Freebox Caller ID",
-          "description": "Ajustez la fréquence à laquelle Home Assistant interroge la Freebox.\nUn scan trop rapide (ex: 1s) réagit plus vite mais peut surcharger la box. 2 secondes est un bon équilibre.",
-          "data": {
-            "scan_interval": "Fréquence de scan (en secondes)"
-          }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configuration Freebox Caller ID",
+        "description": "Ajustez la fréquence à laquelle Home Assistant interroge la Freebox.\nUn scan trop rapide (ex: 1s) réagit plus vite mais peut surcharger la box. 2 secondes est un bon équilibre.",
+        "data": {
+          "scan_interval": "Fréquence de scan (en secondes)"
         }
       }
     }
