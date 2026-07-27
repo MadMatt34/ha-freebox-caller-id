@@ -3,6 +3,8 @@
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
 [![Version](https://img.shields.io/badge/version-1.1.0-green.svg)](https://github.com/)
 
+#WORK IN PROGRESS#
+
 **Freebox Caller ID** est une intégration personnalisée pour Home Assistant permettant de détecter **en temps réel** les appels téléphoniques entrants sur la ligne fixe de votre Freebox, sans ajout de matériel supplémentaire.
 
 *Inspiré de [https://github.com/jystervinou/freebox-caller-id](https://github.com/jystervinou/freebox-caller-id)*
@@ -42,7 +44,7 @@ config/
 
 ---
 
-## 🧩 Installation via HACS
+## 🧩 Installation
 
 ### Installation via HACS
 1. Ouvrir **HACS**  
@@ -86,14 +88,14 @@ L'installation se fait **100 % via l'interface graphique** de Home Assistant.
 
 Vous pouvez ajuster l'intervalle de vérification à tout moment :
 1. Allez dans **Paramètres** > **Appareils et services**.
-2. Sur la carte **Freebox Caller ID Instant**, cliquez sur le bouton **Configurer**.
+2. Sur la carte **Freebox Caller ID**, cliquez sur le bouton **Configurer**.
 3. Choisissez la fréquence de balayage (entre 1 et 60 secondes, 2s recommandé) et validez. L'intégration se rechargera automatiquement.
 
 ---
 
 ## 📡 Événements et Entités créés
 
-### 1. Événement bus Home Assistant : `freebox_incoming_call`
+### 1. Événement Home Assistant : `freebox_incoming_call`
 Émis instantanément à l'arrivée de la première sonnerie d'un nouvel appel.
 
 **Données transmises dans `trigger.event.data` :**
@@ -105,20 +107,22 @@ Vous pouvez ajuster l'intervalle de vérification à tout moment :
 
 ---
 
-### 2. Capteur binaire : `binary_sensor.sonnerie_freebox`
+### 2. Capteur binaire : `binary_sensor.freebox_ringing`
 - **Device Class** : `sound`
-- **État** : `on` (pendant que le téléphone sonne) / `off` (quand décroché ou après un délai d'attente maximum de 45s).
+- **État** :
+    - `on` : Pendant que le téléphone sonne.
+    - `off` : Quand décroché ou après un délai d'attente maximum de 45s.
 - **Attributs enrichis :**
   - `caller_name` : Nom du correspondant.
   - `caller_number` : Numéro de téléphone.
-  - `datetime` : Horodatage de l'appel.
+  - `call_datetime` : Horodatage de l'appel.
   - `call_type` : Type d'appel.
 
 ---
 
-### 3. Capteur : `sensor.dernier_appel_freebox`
+### 3. Capteur : `sensor.freebox_last_call`
 - **État** : Nom ou numéro du dernier appelant enregistré.
-- **Attributs enrichis :**
+- **Attributs enrichis :** Liste des 10 derniers appels avec les informations suivantes
   - `number` : Numéro du correspondant.
   - `name` : Nom associé dans le répertoire.
   - `type` : Type de l'appel.
@@ -148,40 +152,40 @@ action:
   # Annonce vocale sur enceinte connectée
   - action: tts.speak
     target:
-      entity_id: tts.google_en_com
+      entity_id: tts.google_fr_fr
     data:
-      media_player_entity_id: media_player.enceinte_salon
+      media_player_entity_id: media_player.salon_speaker
       message: "Appel téléphonique entrant de {{ trigger.event.data.name }}"
 ```
 
 ---
 
 ### Exemple 2 : Pause multimédia automatique et reprise après la sonnerie
-Met en pause le lecteur multimédia pendant toute la durée de la sonnerie et reprend la lecture une fois l'appel décroché ou terminé :
+Met en pause le lecteur multimédia pendant toute la durée de la sonnerie et reprend la lecture une fois l'appel décroché ou abandonné :
 
 ```yaml
 alias: "Freebox - Pause Musique / TV sur Sonnerie"
 description: "Gère la mise en pause et la reprise des médias pendant qu'un appel sonne"
 trigger:
   - platform: state
-    entity_id: binary_sensor.sonnerie_freebox
+    entity_id: binary_sensor.freebox_ringing
     to: "on"
 action:
   # 1. Mise en pause de la TV ou enceinte
   - action: media_player.media_pause
     target:
-      entity_id: media_player.tv_salon
+      entity_id: media_player.salon_tv
 
   # 2. Attente de la fin de la sonnerie (passage du capteur à 'off')
   - wait_for_trigger:
       - platform: state
-        entity_id: binary_sensor.sonnerie_freebox
+        entity_id: binary_sensor.freebox_ringing
         to: "off"
 
   # 3. Reprise de la lecture
   - action: media_player.media_play
     target:
-      entity_id: media_player.tv_salon
+      entity_id: media_player.salon_tv
 ```
 
 ---
@@ -193,7 +197,7 @@ Une carte d'historique sur votre tableau de bord Home Assistant en utilisant une
 type: markdown
 title: "📜 Historique des derniers appels Freebox"
 content: >
-  {% set calls = state_attr('sensor.dernier_appel_freebox', 'calls') %}
+  {% set calls = state_attr('sensor.freebox_last_call', 'calls') %}
   | Nom / Numéro | Type | Durée |
   | :--- | :--- | :--- |
   {% for call in calls %}
@@ -203,12 +207,14 @@ content: >
 
 ---
 
-## 🛡️ Robustesse et Gestion des Erreurs
+## 🛡️ Gestion des Erreurs
 
 En cas de redémarrage de la Freebox ou de mise à jour du firmware :
 - Un avertissement unique est inscrit dans les journaux de Home Assistant lors de la perte de communication.
 - L'intégration bascule en mode **Backoff Exponentiel** (`2s -> 4s -> 8s -> 16s -> 32s -> 60s`).
 - Dès le retour en ligne de la Freebox, la session est automatiquement ré-authentifiée et l'intervalle de balayage d'origine est rétabli, sans nécessiter de redémarrage de Home Assistant.
+
+---
 
 ## 🛠️ Dépannage
 
