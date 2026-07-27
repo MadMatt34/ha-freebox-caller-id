@@ -22,7 +22,7 @@
       },
       "authorize": {
         "title": "Validation sur la Freebox",
-        "description": "1. Allez devant votre boîtier Freebox Server.\n2. Appuyez sur la **flèche de droite** sur l'écran pour valider la demande d'accès (HA CallerID).\n3. Revenez ici et cliquez sur **Soumettre**.\n\n⚠️ Important : Une fois terminé, allez dans l'interface Freebox OS > Paramètres > Gestion des accès > Applications, et cochez **Accès au journal d'appels** pour HA CallerID."
+        "description": "1. Allez devant votre boîtier Freebox Server.\n2. Appuyez sur la **flèche de droite** sur l'écran pour valider la demande d'accès (HA CallerID).\n3. Revenez ici et cliquez sur **Valider**.\n\n⚠️ Important : Une fois terminé, allez dans l'interface Freebox OS > Paramètres > Gestion des accès > Applications, et cochez **Accès au journal d'appels** pour HA CallerID."
       }
     },
     "error": {
