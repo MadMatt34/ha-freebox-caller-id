@@ -31,13 +31,30 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.track_id = None
 
     async def async_step_user(self, user_input=None):
-        """Étape 1 : Demander l'adresse de la Freebox."""
+        """Étape 1 : Demander l'adresse de la Freebox et vérifier les doublons."""
         errors = {}
 
         if user_input is not None:
-            self.host = user_input[CONF_HOST]
+            self.host = user_input[CONF_HOST].strip()
             session = async_get_clientsession(self.hass)
-            
+
+            # 1. Récupération de l'UID unique de la Freebox via l'endpoint public /api_version
+            try:
+                async with session.get(f"http://{self.host}/api_version") as resp_ver:
+                    if resp_ver.status == 200:
+                        ver_data = await resp_ver.json()
+                        fb_uid = ver_data.get("uid")
+
+                        if fb_uid:
+                            # Définit l'identifiant unique et interrompt le flux si déjà configurée
+                            await self.async_set_unique_id(fb_uid)
+                            self._abort_if_unique_id_configured()
+            except config_entries.ConfigEntryChange:
+                raise
+            except Exception as e:
+                _LOGGER.warning("Impossible d'extraire l'UID de la Freebox (%s), poursuite de la configuration...", e)
+
+            # 2. Demande d'autorisation à la Freebox
             payload = {
                 "app_id": APP_ID,
                 "app_name": APP_NAME,
@@ -77,6 +94,11 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     status = data["result"]["status"]
 
                     if status == "granted":
+                        # Secours : Si l'UID n'a pas pu être récupéré à l'étape 1, on fallback sur le host
+                        if not self.unique_id:
+                            await self.async_set_unique_id(self.host.lower())
+                            self._abort_if_unique_id_configured()
+
                         return self.async_create_entry(
                             title="Freebox Caller ID", 
                             data={
@@ -97,6 +119,7 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
             description_placeholders={"host": self.host}
         )
+
 
 class FreeboxCallerIDOptionsFlow(config_entries.OptionsFlow):
     """Gère les options via le bouton Configurer de l'UI."""
