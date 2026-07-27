@@ -16,13 +16,14 @@ class FreeboxRingingSensor(CoordinatorEntity, BinarySensorEntity):
     """Capteur binaire indiquant si le téléphone sonne."""
 
     _attr_has_entity_name = True
-    _attr_name = "Sonnerie"
+    _attr_translation_key = "ringing"
     _attr_device_class = BinarySensorDeviceClass.SOUND
 
     def __init__(self, coordinator, entry):
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_ringing"
         self._attr_icon = "mdi:phone-ring"
+        self._entry = entry
 
         # Regroupement sous un Appareil dans Home Assistant
         host = entry.data.get(CONF_HOST, "mafreebox.freebox.fr")
