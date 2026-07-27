@@ -224,7 +224,5 @@ En cas de redémarrage de la Freebox ou de mise à jour du firmware :
 
 ---
 
----
-
 ### CREDITS
 *Inspiré de [https://github.com/jystervinou/freebox-caller-id](https://github.com/jystervinou/freebox-caller-id) et largement fait avec l'IA*
