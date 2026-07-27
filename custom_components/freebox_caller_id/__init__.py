@@ -5,25 +5,22 @@ import hmac
 import hashlib
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.typing import ConfigType
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+from .const import DOMAIN, EVENT_INCOMING_CALL, CONF_HOST, CONF_APP_TOKEN, CONF_SCAN_INTERVAL
+
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = "freebox_caller_id"
-EVENT_INCOMING_CALL = "freebox_incoming_call"
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Initialisation du composant via l'interface UI."""
+    host = entry.data[CONF_HOST]
+    app_id = "fr.ha.callerid"
+    app_token = entry.data[CONF_APP_TOKEN]
+    scan_interval = entry.data.get(CONF_SCAN_INTERVAL, 2)
 
-async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Initialisation du composant via configuration.yaml."""
-    conf = config.get(DOMAIN)
-    if conf is None:
-        return True
-
-    host = conf.get("host", "mafreebox.freebox.fr")
-    app_id = conf.get("app_id", "fr.ha.callerid")
-    app_token = conf.get("app_token")
-    scan_interval = conf.get("scan_interval", 2)
+    hass.data.setdefault(DOMAIN, {})
 
     session_token = None
     last_processed_call_id = None
@@ -60,7 +57,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         try:
             headers = {"X-Fbx-App-Auth": session_token}
             async with session.get(f"http://{host}/api/v4/call/log/", headers=headers) as resp:
-                if resp.status == 403: # Session expirée
+                if resp.status == 403:
                     if await async_get_session(session):
                         headers["X-Fbx-App-Auth"] = session_token
                         async with session.get(f"http://{host}/api/v4/call/log/", headers=headers) as resp2:
@@ -75,15 +72,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                     call_id = last_call.get("id")
                     duration = last_call.get("duration", 0)
 
-                    # Initialisation lors du premier lancement pour ne pas redéclencher d'ancien appel
                     if last_processed_call_id is None:
                         last_processed_call_id = call_id
                         return
 
-                    # Détection d'un NOUVEL appel en cours de sonnerie (duration == 0)
                     if call_id != last_processed_call_id and duration == 0:
                         last_processed_call_id = call_id
-
                         event_data = {
                             "id": call_id,
                             "number": last_call.get("number"),
@@ -91,16 +85,19 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                             "type": last_call.get("type"),
                             "datetime": last_call.get("datetime"),
                         }
-
-                        _LOGGER.info("Appel entrant Freebox détecté : %s", event_data)
-
-                        # Émission de l'événement natif dans le bus Home Assistant
                         hass.bus.async_fire(EVENT_INCOMING_CALL, event_data)
 
         except Exception as err:
-            _LOGGER.error("Erreur lors de la lecture du journal d'appels Freebox: %s", err)
+            _LOGGER.error("Erreur API Freebox: %s", err)
 
-    # Lancement de la boucle de vérification (toutes les X secondes)
-    async_track_time_interval(hass, poll_freebox_calls, timedelta(seconds=scan_interval))
+    # Lancement du polling et sauvegarde de l'outil d'annulation
+    remove_listener = async_track_time_interval(hass, poll_freebox_calls, timedelta(seconds=scan_interval))
+    hass.data[DOMAIN][entry.entry_id] = remove_listener
 
+    return True
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Désinstallation de l'intégration."""
+    remove_listener = hass.data[DOMAIN].pop(entry.entry_id)
+    remove_listener() # Arrête le polling
     return True
