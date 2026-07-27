@@ -15,7 +15,8 @@ Cette intégration effectue un balayage HTTP rapide et asynchrone (polling toute
 1. Déclencher un **événement natif** (`freebox_incoming_call`) dès le premier signal de sonnerie.
 2. Activer un **capteur binaire** (`binary_sensor.sonnerie_freebox`) pendant toute la durée où le téléphone sonne.
 3. Conserver les données de l'appelant dans un **capteur dédié** (`sensor.dernier_appel_freebox`).
-4. Gérer de manière transparente les redémarrages de la Freebox grâce à un algorithme de **reconnexion progressive (*exponential backoff*)** pour ne pas polluer les journaux de Home Assistant.
+4. Fonctionne en **local**, sans cloud
+5. Gérer de manière transparente les redémarrages de la Freebox grâce à un algorithme de **reconnexion progressive (*exponential backoff*)** pour ne pas polluer les journaux de Home Assistant.
 
 ---
 
@@ -38,6 +39,15 @@ config/
 ```
 
 ---
+
+## 🧩 Installation via HACS
+
+1. Ouvrir **HACS → Intégrations**  
+2. Cliquer sur **Ajouter un dépôt personnalisé**  
+3. Ajouter : https://github.com/MadMatt34/ha-freebox-caller-id
+4. Choisir la catégorie **Intégration**  
+5. Installer l’intégration  
+6. Redémarrer Home Assistant
 
 ## 🚀 Installation & Configuration
 
