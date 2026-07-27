@@ -28,10 +28,12 @@ class FreeboxRingingSensor(CoordinatorEntity, BinarySensorEntity):
         
     @property
     def extra_state_attributes(self):
-        """Ajoute le numéro et le nom dans les attributs pendant la sonnerie."""
-        if self.coordinator.data and self.is_on:
+        """Ajoute toutes les informations de l'appel entrant dans les attributs."""
+        if self.coordinator.data:
             return {
                 "caller_name": self.coordinator.data.get("caller_name"),
-                "caller_number": self.coordinator.data.get("caller_number")
+                "caller_number": self.coordinator.data.get("caller_number"),
+                "datetime": self.coordinator.data.get("datetime"),
+                "call_type": self.coordinator.data.get("call_type"),
             }
         return {}
