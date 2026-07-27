@@ -19,7 +19,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     host = entry.data[CONF_HOST]
     app_id = "fr.ha.callerid"
     app_token = entry.data[CONF_APP_TOKEN]
-    scan_interval = entry.data.get(CONF_SCAN_INTERVAL, 2)
+    scan_interval = entry.options.get(
+        CONF_SCAN_INTERVAL, 
+        entry.data.get(CONF_SCAN_INTERVAL, 2)
+    )
 
     session = async_get_clientsession(hass)
     
@@ -37,7 +40,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Demande à Home Assistant de charger les fichiers sensor.py et binary_sensor.py
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    # Dire à Home Assistant d'écouter les modifications des options
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
     return True
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Recharge l'intégration si les options sont modifiées."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Désinstallation de l'intégration."""
