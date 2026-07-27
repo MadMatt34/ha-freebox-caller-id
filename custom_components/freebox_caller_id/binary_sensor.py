@@ -33,7 +33,7 @@ class FreeboxRingingSensor(CoordinatorEntity, BinarySensorEntity):
             return {
                 "caller_name": self.coordinator.data.get("caller_name"),
                 "caller_number": self.coordinator.data.get("caller_number"),
-                "datetime": self.coordinator.data.get("datetime"),
+                "call_datetime": self.coordinator.data.get("datetime"),
                 "call_type": self.coordinator.data.get("call_type"),
             }
         return {}
