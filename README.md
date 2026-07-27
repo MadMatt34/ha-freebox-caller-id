@@ -1,6 +1,6 @@
 # ha-freebox-caller-id
 
-'alias: "Freebox - Action sur Appel Entrant"
+alias: "Freebox - Action sur Appel Entrant"
 description: "Se déclenche instantanément dès que le téléphone fixe sonne"
 trigger:
   - platform: event
