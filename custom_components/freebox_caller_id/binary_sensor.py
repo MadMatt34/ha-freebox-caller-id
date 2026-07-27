@@ -14,7 +14,7 @@ class FreeboxRingingSensor(CoordinatorEntity, BinarySensorEntity):
     
     def __init__(self, coordinator):
         super().__init__(coordinator)
-        self._attr_name = "Sonnerie Freebox"
+        self._attr_name = "Freebox Sonnerie"
         self._attr_unique_id = f"{DOMAIN}_ringing"
         self._attr_device_class = BinarySensorDeviceClass.SOUND
         self._attr_icon = "mdi:phone-ring"
@@ -33,7 +33,6 @@ class FreeboxRingingSensor(CoordinatorEntity, BinarySensorEntity):
             return {
                 "caller_name": self.coordinator.data.get("caller_name"),
                 "caller_number": self.coordinator.data.get("caller_number"),
-                "call_datetime": self.coordinator.data.get("datetime"),
-                "call_type": self.coordinator.data.get("call_type"),
+                "call_datetime": self.coordinator.data.get("datetime")
             }
         return {}
