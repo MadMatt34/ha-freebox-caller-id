@@ -1,4 +1,4 @@
-"""Capteur affichant le dernier appelant."""
+"""Capteur affichant le dernier appelant et l'historique récent."""
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -10,7 +10,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     async_add_entities([FreeboxLastCallSensor(coordinator)])
 
 class FreeboxLastCallSensor(CoordinatorEntity, SensorEntity):
-    """Entité stockant les infos du dernier appelant."""
+    """Entité stockant le dernier appel et l'historique des 10 derniers appels."""
     
     def __init__(self, coordinator):
         super().__init__(coordinator)
@@ -20,7 +20,7 @@ class FreeboxLastCallSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self):
-        """Affiche le nom ou le numéro de l'appelant."""
+        """Affiche le nom ou le numéro du tout dernier appelant en état principal."""
         if self.coordinator.data:
             name = self.coordinator.data.get("caller_name")
             num = self.coordinator.data.get("caller_number")
@@ -29,13 +29,14 @@ class FreeboxLastCallSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self):
-        """Données détaillées du dernier appel."""
+        """Expose le dernier appel et la liste des 10 derniers appels dans les attributs."""
         if self.coordinator.data:
             return {
                 "number": self.coordinator.data.get("caller_number"),
                 "name": self.coordinator.data.get("caller_name"),
                 "type": self.coordinator.data.get("call_type"),
                 "duration": self.coordinator.data.get("duration"),
-                "timestamp": self.coordinator.data.get("datetime")
+                "timestamp": self.coordinator.data.get("datetime"),
+                "calls": self.coordinator.data.get("recent_calls", []) # <--- Liste complète ici
             }
-        return {}
+        return {"calls": []}
