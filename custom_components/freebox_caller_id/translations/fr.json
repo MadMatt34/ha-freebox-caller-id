@@ -1,4 +1,18 @@
 {
+  {
+    "entity": {
+      "sensor": {
+        "last_call": {
+          "name": "Dernier appel"
+        }
+      },
+      "binary_sensor": {
+        "ringing": {
+          "name": "Sonnerie"
+        }
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {
