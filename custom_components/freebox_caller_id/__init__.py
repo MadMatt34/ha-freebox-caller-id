@@ -173,8 +173,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 else:
                     data = await resp.json()
 
-# ... [Gardez tout le début de _async_update_data inchangé jusqu'à la récupération de data] ...
-
             if not data.get("success"):
                 self._handle_failure("Réponse API invalide")
 
