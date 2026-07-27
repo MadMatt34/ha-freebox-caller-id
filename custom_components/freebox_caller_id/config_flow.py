@@ -2,6 +2,7 @@
 import logging
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
@@ -14,8 +15,13 @@ _LOGGER = logging.getLogger(__name__)
 
 class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Gère le flux de configuration UI pour Freebox Caller ID."""
-
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Dit à Home Assistant qu'un menu d'options existe."""
+        return FreeboxCallerIDOptionsFlow(config_entry)
 
     def __init__(self):
         """Initialisation."""
@@ -91,4 +97,34 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="authorize",
             errors=errors,
             description_placeholders={"host": self.host}
+        )
+
+class FreeboxCallerIDOptionsFlow(config_entries.OptionsFlow):
+    """Gère les options via le bouton Configurer de l'UI."""
+
+    def __init__(self, config_entry):
+        """Initialisation."""
+        self.config_entry = config_entry
+
+    async def async_step_init(self, user_input=None):
+        """Gère le formulaire des options."""
+        if user_input is not None:
+            # Sauvegarde les nouvelles options et ferme la fenêtre
+            return self.async_create_entry(title="", data=user_input)
+
+        # Récupère l'intervalle actuel (soit depuis les options, soit depuis la config initiale, soit par défaut)
+        current_interval = self.config_entry.options.get(
+            CONF_SCAN_INTERVAL, 
+            self.config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        )
+
+        # Affiche le formulaire avec un slider / champ numérique (min 1 sec, max 60 sec)
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema({
+                vol.Required(
+                    CONF_SCAN_INTERVAL, 
+                    default=current_interval
+                ): vol.All(vol.Coerce(int), vol.Range(min=1, max=60))
+            })
         )
