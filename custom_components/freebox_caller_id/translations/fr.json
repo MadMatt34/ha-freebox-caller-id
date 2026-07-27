@@ -1,0 +1,26 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connexion à la Freebox",
+        "description": "Entrez l'adresse de votre Freebox. Si vous ne l'avez pas changée, laissez la valeur par défaut.",
+        "data": {
+          "host": "Adresse (ex: mafreebox.freebox.fr)"
+        }
+      },
+      "authorize": {
+        "title": "Validation sur la Freebox",
+        "description": "1. Allez devant votre boîtier Freebox Server.\n2. Appuyez sur la **flèche de droite** sur l'écran pour valider la demande d'accès (HA CallerID).\n3. Revenez ici et cliquez sur **Soumettre**.\n\n⚠️ Important : Une fois terminé, allez dans l'interface Freebox OS > Paramètres > Gestion des accès > Applications, et cochez **Accès au journal d'appels** pour HA CallerID."
+      }
+    },
+    "error": {
+      "cannot_connect": "Échec de la connexion à la Freebox.",
+      "auth_failed": "La Freebox a rejeté la demande d'association.",
+      "pending_auth": "Vous n'avez pas encore validé sur l'écran de la Freebox !",
+      "auth_denied": "Demande refusée ou délai d'attente dépassé."
+    },
+    "abort": {
+      "already_configured": "Cette Freebox est déjà configurée."
+    }
+  }
+}
