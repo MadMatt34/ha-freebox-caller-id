@@ -14,7 +14,7 @@ class FreeboxLastCallSensor(CoordinatorEntity, SensorEntity):
     
     def __init__(self, coordinator):
         super().__init__(coordinator)
-        self._attr_name = "Dernier appel Freebox"
+        self._attr_name = "Freebox Dernier Appel"
         self._attr_unique_id = f"{DOMAIN}_last_call"
         self._attr_icon = "mdi:phone-log"
 
