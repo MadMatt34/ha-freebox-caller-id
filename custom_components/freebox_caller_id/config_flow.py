@@ -45,7 +45,7 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     if resp_ver.status == 200:
                         ver_data = await resp_ver.json()
                         fb_uid = ver_data.get("uid")
-            except Exception as e:
+            except Exception as e:    # noqa: BLE001
                 _LOGGER.warning("Impossible d'extraire l'UID de la Freebox (%s), poursuite...", e)
 
             # 2. Vérification d'unicité HORS du try/except
@@ -69,7 +69,7 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         return await self.async_step_authorize()
                     else:
                         errors["base"] = "auth_failed"
-            except Exception as e:
+            except Exception as e:    # noqa: BLE001
                 _LOGGER.error("Erreur de connexion à la Freebox: %s", e)
                 errors["base"] = "cannot_connect"
 
@@ -93,7 +93,7 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 async with session.get(f"http://{self.host}/api/v4/login/authorize/{self.track_id}") as resp:
                     data = await resp.json()
                     status = data["result"]["status"]
-            except Exception:
+            except Exception:    # noqa: BLE001
                 errors["base"] = "cannot_connect"
 
             if status == "granted":
