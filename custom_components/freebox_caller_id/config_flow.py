@@ -38,23 +38,22 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self.host = user_input[CONF_HOST].strip()
             session = async_get_clientsession(self.hass)
 
-            # 1. Récupération de l'UID unique de la Freebox via l'endpoint public /api_version
+            # 1. Récupération de l'UID (dans son propre bloc try/except)
+            fb_uid = None
             try:
-                async with session.get(f"http://{self.host}/api_version") as resp_ver:
+                async with session.get(f"http://{self.host}/api_version", timeout=5) as resp_ver:
                     if resp_ver.status == 200:
                         ver_data = await resp_ver.json()
                         fb_uid = ver_data.get("uid")
-
-                        if fb_uid:
-                            # Définit l'identifiant unique et interrompt le flux si déjà configurée
-                            await self.async_set_unique_id(fb_uid)
-                            self._abort_if_unique_id_configured()
-            except config_entries.ConfigEntryChange:
-                raise
             except Exception as e:
-                _LOGGER.warning("Impossible d'extraire l'UID de la Freebox (%s), poursuite de la configuration...", e)
+                _LOGGER.warning("Impossible d'extraire l'UID de la Freebox (%s), poursuite...", e)
 
-            # 2. Demande d'autorisation à la Freebox
+            # 2. Vérification d'unicité HORS du try/except
+            if fb_uid:
+                await self.async_set_unique_id(fb_uid)
+                self._abort_if_unique_id_configured()
+
+            # 3. Demande d'autorisation à la Freebox
             payload = {
                 "app_id": APP_ID,
                 "app_name": APP_NAME,
@@ -88,31 +87,33 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             session = async_get_clientsession(self.hass)
+            status = None
+            
             try:
                 async with session.get(f"http://{self.host}/api/v4/login/authorize/{self.track_id}") as resp:
                     data = await resp.json()
                     status = data["result"]["status"]
-
-                    if status == "granted":
-                        # Secours : Si l'UID n'a pas pu être récupéré à l'étape 1, on fallback sur le host
-                        if not self.unique_id:
-                            await self.async_set_unique_id(self.host.lower())
-                            self._abort_if_unique_id_configured()
-
-                        return self.async_create_entry(
-                            title="Freebox Caller ID", 
-                            data={
-                                CONF_HOST: self.host,
-                                CONF_APP_TOKEN: self.app_token,
-                                CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL
-                            }
-                        )
-                    elif status == "pending":
-                        errors["base"] = "pending_auth"
-                    else:
-                        errors["base"] = "auth_denied"
             except Exception:
                 errors["base"] = "cannot_connect"
+
+            if status == "granted":
+                # Secours : Si l'UID n'a pas pu être récupéré à l'étape 1
+                if not self.unique_id:
+                    await self.async_set_unique_id(self.host.lower())
+                    self._abort_if_unique_id_configured()
+
+                return self.async_create_entry(
+                    title="Freebox Caller ID", 
+                    data={
+                        CONF_HOST: self.host,
+                        CONF_APP_TOKEN: self.app_token,
+                        CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL
+                    }
+                )
+            elif status == "pending":
+                errors["base"] = "pending_auth"
+            elif status is not None:
+                errors["base"] = "auth_denied"
 
         return self.async_show_form(
             step_id="authorize",
