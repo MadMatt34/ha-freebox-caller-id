@@ -33,17 +33,25 @@ class FreeboxCallerIDEntity(CoordinatorEntity[FreeboxCallerCoordinator]):
 
         firmware_ver = None
         box_model = None
+
         if self.coordinator.data and isinstance(self.coordinator.data, dict):
-            firmware_ver = self.coordinator.data.get("firmware_version")
-            box_model = self.coordinator.data.get("board_name")
-        model_name = f"Freebox Server ({box_model})"
+            system_data = self.coordinator.data.get("system", {})    # Extraction du dictionnaire système
+            firmware_ver = system_data.get("firmware_version")    # 1. Version du firmware
+            model_info = system_data.get("model_info", {})    # 2. Modèle commercial (pretty_name)
+            if isinstance(model_info, dict):
+                box_model = model_info.get("pretty_name") or model_info.get("name")
+
+        # Construction de la chaîne modèle
+        if box_model:
+            model_str = box_model
+        else:
+            model_str = "Freebox Server"
 
         return DeviceInfo(
             identifiers={(DOMAIN, self._entry.entry_id)},
             name=device_name,
             manufacturer="Free",
-            model=model_name,
+            model=model_str,
             sw_version=firmware_ver,
             configuration_url=f"http://{host}",
-            suggested_area="Home",
         )
