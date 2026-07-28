@@ -26,7 +26,6 @@ _LOGGER = logging.getLogger(__name__)
 
 MAX_BACKOFF_INTERVAL = 60  # Intervalle maximal en secondes en cas de panne
 
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Initialisation du composant via l'interface UI."""
     host = entry.data[CONF_HOST]
@@ -68,7 +67,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
 
-
 class FreeboxCallerCoordinator(DataUpdateCoordinator):
     """Gestionnaire de mise à jour des données Freebox avec gestion d'erreurs avancée."""
 
@@ -85,6 +83,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
         self.app_token = app_token
         self.base_scan_interval = scan_interval
         self.session_token = None
+        self.system_info = {}
         self._last_notified_call_id = None
         self._consecutive_failures = 0
 
@@ -116,12 +115,32 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
             _LOGGER.debug("Échec de la demande de session Freebox : %s", err)
         return False
 
+    async def _async_fetch_system_info(self, headers: dict, timeout: aiohttp.ClientTimeout) -> None:
+        """Récupère les informations système une seule fois au démarrage ou après reconnexion."""
+        if self.system_info:
+            return
+        try:
+            async with self.session.get(
+                f"http://{self.host}/api/v4/system/",
+                headers=headers,
+                timeout=timeout,
+            ) as resp_sys:
+                if resp_sys.status == 200:
+                    sys_json = await resp_sys.json()
+                    if sys_json.get("success"):
+                        self.system_info = sys_json.get("result", {})
+                        _LOGGER.debug("Données système Freebox récupérées : %s", self.system_info)
+                else:
+                    _LOGGER.warning("Impossible de récupérer /api/v4/system/ (Code HTTP %d)", resp_sys.status)
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.warning("Erreur lors de la récupération des informations système Freebox : %s", err)
+
     def _handle_failure(self, reason: str):
         """Calcule le backoff exponentiel et gère le niveau de log."""
         self._consecutive_failures += 1
-        self.session_token = None  # Invalide la session pour forcer une ré-authentification
+        self.session_token = None
+        self.system_info = {}  # Réinitialise les infos système pour forcer un rechargement à la reconnexion
 
-        # Calcul exponentiel : 2s -> 4s -> 8s -> 16s -> 32s -> 60s max
         backoff_seconds = min(
             MAX_BACKOFF_INTERVAL,
             self.base_scan_interval * (2 ** self._consecutive_failures)
@@ -161,16 +180,20 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
 
             headers = {"X-Fbx-App-Auth": self.session_token}
 
-            # 1. Requête du journal d'appels
+            # Récupération unique des infos système si non encore chargées
+            await self._async_fetch_system_info(headers, timeout)
+
+            # Requête du journal d'appels
             async with self.session.get(
                 f"http://{self.host}/api/v4/call/log/",
                 headers=headers,
                 timeout=timeout
             ) as resp:
-                if resp.status == 403:  # Session expirée sur la box
+                if resp.status == 403:
                     _LOGGER.debug("Session expirée (403), tentative de renouvellement...")
                     if await self._async_get_session():
                         headers["X-Fbx-App-Auth"] = self.session_token
+                        await self._async_fetch_system_info(headers, timeout)
                         async with self.session.get(
                             f"http://{self.host}/api/v4/call/log/",
                             headers=headers,
@@ -191,42 +214,21 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
 
             self._handle_success()
 
-            # 2. Requête des informations système (pour firmware, modèle, etc.)
-            system_data = {}
-            try:
-                async with self.session.get(
-                    f"http://{self.host}/api/v4/system/",
-                    headers=headers,
-                    timeout=timeout,
-                ) as resp_sys:
-                    if resp_sys.status == 200:
-                        sys_json = await resp_sys.json()
-                        if sys_json.get("success"):
-                            system_data = sys_json.get("result", {})
-            except Exception as err:  # noqa: BLE001
-                _LOGGER.debug("Échec de la récupération des infos système : %s", err)
-
             calls_result = data.get("result", [])
             if not calls_result:
                 return {
-                    "system": system_data,
+                    "system": self.system_info,
                 }
 
-            # Récupère les 10 derniers appels de la liste Freebox
             last_10_calls = calls_result[:10]
-
-            # Le tout dernier appel (pour l'état principal et le binaire)
             last_call = last_10_calls[0]
 
             call_id = last_call.get("id")
             duration = last_call.get("duration", 0)
             call_time = last_call.get("datetime", time.time())
 
-            is_ringing = False
-            if duration == 0 and (time.time() - call_time) < 45:
-                is_ringing = True
+            is_ringing = duration == 0 and (time.time() - call_time) < 45
 
-            # Déclenchement de l'événement pour un nouveau coup de fil
             if self._last_notified_call_id is None:
                 self._last_notified_call_id = call_id
             elif call_id != self._last_notified_call_id and is_ringing:
@@ -240,7 +242,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 }
                 self.hass.bus.async_fire(EVENT_INCOMING_CALL, event_data)
 
-            # Formate la liste propre des 10 derniers appels pour les attributs
             formatted_calls = [
                 {
                     "id": c.get("id"),
@@ -262,7 +263,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 "datetime": call_time,
                 "id": call_id,
                 "recent_calls": formatted_calls,
-                "system": system_data,
+                "system": self.system_info,
             }
 
         except (aiohttp.ClientError, TimeoutError) as err:
