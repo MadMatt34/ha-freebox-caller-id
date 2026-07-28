@@ -35,7 +35,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     app_token = entry.data[CONF_APP_TOKEN]
 
     scan_interval = entry.options.get(
-        CONF_SCAN_INTERVAL, 
+        CONF_SCAN_INTERVAL,
         entry.data.get(CONF_SCAN_INTERVAL, 2)
     )
 
@@ -113,7 +113,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 if data.get("success"):
                     self.session_token = data["result"]["session_token"]
                     return True
-        except (aiohttp.ClientError, asyncio.TimeoutError, Exception) as err:  # noqa: BLE001
+        except (aiohttp.ClientError, TimeoutError, Exception) as err:  # noqa: BLE001
             _LOGGER.debug("Échec de la demande de session Freebox : %s", err)
         return False
 
@@ -162,8 +162,8 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
 
             headers = {"X-Fbx-App-Auth": self.session_token}
             async with self.session.get(
-                f"http://{self.host}/api/v4/call/log/", 
-                headers=headers, 
+                f"http://{self.host}/api/v4/call/log/",
+                headers=headers,
                 timeout=timeout
             ) as resp:
                 if resp.status == 403:  # Session expirée sur la box
@@ -171,8 +171,8 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                     if await self._async_get_session():
                         headers["X-Fbx-App-Auth"] = self.session_token
                         async with self.session.get(
-                            f"http://{self.host}/api/v4/call/log/", 
-                            headers=headers, 
+                            f"http://{self.host}/api/v4/call/log/",
+                            headers=headers,
                             timeout=timeout
                         ) as resp2:
                             if resp2.status != 200:
@@ -246,10 +246,10 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 "recent_calls": formatted_calls,
             }
 
-        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+        except (aiohttp.ClientError, TimeoutError) as err:
             self._handle_failure(f"Erreur réseau / timeout : {err}")
         except UpdateFailed:
             raise
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             _LOGGER.exception("Erreur lors de la récupération des appels")
             self._handle_failure(f"Erreur inattendue : {err}")
