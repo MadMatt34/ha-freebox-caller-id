@@ -1,19 +1,21 @@
 """Classe de base pour les entités Freebox Caller ID."""
+from __future__ import annotations
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import FreeboxCallerCoordinator
 from .const import CONF_HOST, DOMAIN
-from .coordinator import FreeboxDataUpdateCoordinator
 
-class FreeboxCallerIDEntity(CoordinatorEntity[FreeboxDataUpdateCoordinator]):
+class FreeboxCallerIDEntity(CoordinatorEntity[FreeboxCallerCoordinator]):
     """Classe de base partagée par toutes les entités de l'intégration."""
 
     _attr_has_entity_name = True
 
     def __init__(
         self,
-        coordinator: FreeboxDataUpdateCoordinator,
+        coordinator: FreeboxCallerCoordinator,
         entry: ConfigEntry,
     ) -> None:
         """Initialise l'entité de base."""
@@ -25,7 +27,6 @@ class FreeboxCallerIDEntity(CoordinatorEntity[FreeboxDataUpdateCoordinator]):
         """Informations centralisées de l'appareil."""
         host = self._entry.data.get(CONF_HOST, "mafreebox.freebox.fr")
 
-        # Récupération de la version du firmware si disponible dans le coordinator
         firmware_ver = None
         if self.coordinator.data and isinstance(self.coordinator.data, dict):
             firmware_ver = self.coordinator.data.get("firmware_version")
@@ -37,5 +38,5 @@ class FreeboxCallerIDEntity(CoordinatorEntity[FreeboxDataUpdateCoordinator]):
             model="Freebox Caller ID",
             sw_version=firmware_ver,
             configuration_url=f"http://{host}",
-            suggested_area="Office"
+            suggested_area="Entrée",
         )
