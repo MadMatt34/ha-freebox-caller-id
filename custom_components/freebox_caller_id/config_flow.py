@@ -1,15 +1,26 @@
 """Config flow pour l'intégration Freebox Caller ID."""
+from __future__ import annotations
+
 import logging
+
 import voluptuous as vol
+
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
-    DOMAIN, DEFAULT_HOST, APP_ID, APP_NAME, 
-    APP_VERSION, DEVICE_NAME, CONF_HOST, CONF_APP_TOKEN, 
-    CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
+    APP_ID,
+    APP_NAME,
+    APP_VERSION,
+    CONF_APP_TOKEN,
+    CONF_HOST,
+    CONF_SCAN_INTERVAL,
+    DEFAULT_HOST,
+    DEFAULT_SCAN_INTERVAL,
+    DEVICE_NAME,
+    DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
