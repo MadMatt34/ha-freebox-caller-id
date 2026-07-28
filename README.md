@@ -93,7 +93,7 @@ You can adjust the polling interval at any time:
 
 ---
 
-## 📡 Events and Created Entities
+## 📡 Events and Entities
 
 ### 1. Home Assistant Event: `freebox_incoming_call`
 Fired instantaneously as soon as a new incoming call starts ringing.
