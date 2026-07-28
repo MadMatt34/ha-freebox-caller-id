@@ -25,6 +25,7 @@ select = [
     "SIM",    # flake8-simplify (simplification des expressions)
     "N",      # pep8-naming (conventions de nommage des classes, fonctions)
     "ASYNC",  # flake8-async (règles de sécurité pour le code asyncio)
+    "BLE",    # flake8-blind-except (vérification des except Exception)
     "RUF",    # Règles propriétaires optimisées de Ruff
 ]
 
