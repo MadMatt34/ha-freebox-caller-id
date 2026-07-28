@@ -7,7 +7,7 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_APP_TOKEN, CONF_HOST, DOMAIN
+from .const import CONF_APP_TOKEN, DOMAIN
 
 # Clés sensibles à masquer (Tokens d'accès + Données personnelles / PII)
 TO_REDACT = {
