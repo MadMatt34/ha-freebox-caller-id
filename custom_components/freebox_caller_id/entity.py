@@ -43,18 +43,13 @@ class FreeboxCallerIDEntity(CoordinatorEntity[FreeboxCallerCoordinator]):
             firmware_ver = system_data.get("firmware_version")
 
             model_info = system_data.get("model_info", {})
-            raw_model = None
 
             if isinstance(model_info, dict):
-                raw_model = model_info.get("pretty_name") or model_info.get("name")
+                box_model = model_info.get("pretty_name") or model_info.get("name")
             elif isinstance(model_info, str):
-                raw_model = model_info
-
+                box_model = model_info
             if not raw_model:
-                raw_model = system_data.get("board_name")
-
-            if raw_model:
-                box_model = FREEBOX_MODELS.get(raw_model.lower(), raw_model)
+                box_model = system_data.get("board_name")
 
         model_str = f"Freebox Server (modèle {box_model})" if box_model else "Freebox Server"
 
