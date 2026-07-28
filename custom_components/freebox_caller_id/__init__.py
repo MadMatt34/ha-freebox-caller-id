@@ -100,7 +100,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 if data.get("success"):
                     self.session_token = data["result"]["session_token"]
                     return True
-        except (aiohttp.ClientError, asyncio.TimeoutError, Exception) as err:
+        except (aiohttp.ClientError, asyncio.TimeoutError, Exception) as err:    # noqa: BLE001
             _LOGGER.debug("Échec de la demande de session Freebox : %s", err)
         return False
 
@@ -144,8 +144,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
         timeout = aiohttp.ClientTimeout(total=5)
 
         try:
-            if not self.session_token:
-                if not await self._async_get_session():
+            if not self.session_token and if not await self._async_get_session():
                     self._handle_failure("Impossible d'ouvrir une session")
 
             headers = {"X-Fbx-App-Auth": self.session_token}
@@ -239,5 +238,5 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
         except UpdateFailed:
             raise
         except Exception as err:
-            _LOGGER.exception("Erreur inattendue dans FreeboxCallerCoordinator : %s", err)
+            _LOGGER.exception("Erreur lors de la récupération des appels")
             self._handle_failure(f"Erreur inattendue : {err}")
