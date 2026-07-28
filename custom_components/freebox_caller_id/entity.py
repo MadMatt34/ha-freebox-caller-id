@@ -43,7 +43,7 @@ class FreeboxCallerIDEntity(CoordinatorEntity[FreeboxCallerCoordinator]):
             if not box_model:
                 box_model = system_data.get("board_name")
 
-        model_str = f"{box_model}" if box_model else "Freebox Caller ID"
+        model_str = f"Freebox Server (modèle {box_model})" if box_model else "Freebox Server"
 
         return DeviceInfo(
             identifiers={(DOMAIN, self._entry.entry_id)},
