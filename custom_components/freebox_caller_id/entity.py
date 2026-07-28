@@ -42,10 +42,7 @@ class FreeboxCallerIDEntity(CoordinatorEntity[FreeboxCallerCoordinator]):
                 box_model = model_info.get("pretty_name") or model_info.get("name")
 
         # Construction de la chaîne modèle
-        if box_model:
-            model_str = f"{short_id}"
-        else:
-            model_str = "Freebox Server"
+        model_str = f"{box_model}" if box_model else "Freebox Server"
 
         return DeviceInfo(
             identifiers={(DOMAIN, self._entry.entry_id)},
