@@ -4,7 +4,7 @@
   "codeowners": ["@MadMatt34"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/MadMatt34/ha-freebox-caller-id",
+  "documentation": "https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/README.md",
   "integration_type": "hub",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/MadMatt34/ha-freebox-caller-id/issues",
