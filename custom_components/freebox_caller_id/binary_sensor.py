@@ -30,7 +30,6 @@ class FreeboxRingingSensor(FreeboxCallerIDEntity, BinarySensorEntity):
 
     _attr_translation_key = "ringing"
     _attr_device_class = BinarySensorDeviceClass.SOUND
-    _attr_icon = "mdi:phone-ring"
 
     def __init__(self, coordinator, entry) -> None:
         """Initialise le capteur binaire."""
