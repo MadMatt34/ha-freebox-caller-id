@@ -1,0 +1,44 @@
+[tool.ruff]
+# Ciblage de la version Python moderne utilisée par Home Assistant
+target-version = "py312"
+line-length = 88
+
+# Dossiers à ignorer
+exclude = [
+    ".git",
+    ".github",
+    ".venv",
+    "build",
+    "dist",
+    "__pycache__",
+]
+
+[tool.ruff.lint]
+# Ensemble des règles appliquées dans Home Assistant Core
+select = [
+    "E",      # pycodestyle (erreurs)
+    "W",      # pycodestyle (avertissements)
+    "F",      # Pyflakes (erreurs de syntaxe / variables non utilisées)
+    "I",      # isort (tri automatique et strict des imports)
+    "UP",     # pyupgrade (modernisation de la syntaxe Python)
+    "B",      # flake8-bugbear (détection de bugs et pièges courants)
+    "SIM",    # flake8-simplify (simplification des expressions)
+    "N",      # pep8-naming (conventions de nommage des classes, fonctions)
+    "ASYNC",  # flake8-async (règles de sécurité pour le code asyncio)
+    "RUF",    # Règles propriétaires optimisées de Ruff
+]
+
+ignore = [
+    "E501",   # Longueur de ligne
+    "B008",   # Appels de fonctions dans les arguments par défaut
+    "I001",   # Ignore le tri strict des imports (isort)
+]
+
+[tool.ruff.lint.isort]
+# Identifie votre composant personnalisé comme module local
+known-first-party = ["custom_components.freebox_caller_id"]
+combine-as-imports = true
+
+[tool.ruff.lint.per-file-ignores]
+# Assouplissement pour d'éventuels tests unitaires futurs
+"tests/*" = ["S101"]
