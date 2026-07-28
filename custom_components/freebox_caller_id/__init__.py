@@ -144,7 +144,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
         timeout = aiohttp.ClientTimeout(total=5)
 
         try:
-            if not self.session_token and if not await self._async_get_session():
+            if not self.session_token and not await self._async_get_session():
                     self._handle_failure("Impossible d'ouvrir une session")
 
             headers = {"X-Fbx-App-Auth": self.session_token}
