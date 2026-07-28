@@ -43,7 +43,7 @@ class FreeboxCallerIDEntity(CoordinatorEntity[FreeboxCallerCoordinator]):
 
         # Construction de la chaîne modèle
         if box_model:
-            model_str = box_model
+            model_str = f"{short_id}"
         else:
             model_str = "Freebox Server"
 
