@@ -19,7 +19,7 @@ Cette intégration effectue un scan HTTP rapide et asynchrone (polling toutes le
 2. Activer un **capteur binaire** (`binary_sensor.sonnerie_freebox`) pendant toute la durée où le téléphone sonne, avec les informations de l'appelant.
 3. Conserver les données de l'appelant dans un **capteur dédié** (`sensor.dernier_appel_freebox`), et l'historique des 10 derniers appels.
 4. Fonctionner en **local**, sans cloud
-5. Gérer de manière transparente les redémarrages de la Freebox grâce à un algorithme de **reconnexion progressive (*exponential backoff*)** pour ne pas polluer les journaux de Home Assistant.
+5. Gérer de manière transparente les redémarrages de la Freebox grâce à un algorithme de **reconnexion progressive** (*exponential backoff*) pour ne pas polluer les journaux de Home Assistant.
 
 ---
 
