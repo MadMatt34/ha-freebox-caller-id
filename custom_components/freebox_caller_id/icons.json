@@ -1,0 +1,18 @@
+{
+  "entity": {
+    "sensor": {
+      "last_call": {
+        "default": "mdi:phone-log"
+      }
+    },
+    "binary_sensor": {
+      "ringing": {
+        "default": "mdi:phone-ring",
+        "state": {
+          "on": "mdi:phone-ring",
+          "off": "mdi:phone-hangup"
+        }
+      }
+    }
+  }
+}
