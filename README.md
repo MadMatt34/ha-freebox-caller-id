@@ -271,6 +271,7 @@ En cas de redémarrage de la Freebox ou de mise à jour du firmware :
 - Vérifiez que votre Freebox est accessible sur le réseau local
 - Assurez-vous que Home Assistant peut communiquer avec la Freebox
 - Consultez les logs : **Paramètres → Système → Journaux**
+- Diagnostics & Vie privée : Exportez vos fichiers de diagnostic en toute sécurité lors de l'ouverture d'un ticket sur GitHub ; vos jetons d'accès, identifiants et données personnelles (numéros de téléphone et noms des correspondants) sont automatiquement anonymisés.
 
 ---
 
