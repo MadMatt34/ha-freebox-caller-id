@@ -8,6 +8,7 @@
 [🏴󠁧󠁢󠁥󠁮󠁧󠁿 README in ENGLISH 🏴󠁧󠁢󠁥󠁮󠁧󠁿](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/README.md)
 
 
+
 **Freebox Caller ID** est une intégration personnalisée pour Home Assistant permettant de détecter **en temps réel** les appels téléphoniques entrants sur la ligne fixe de votre [Freebox](https://www.free.fr/freebox), sans ajout de matériel supplémentaire.
 
 ---
