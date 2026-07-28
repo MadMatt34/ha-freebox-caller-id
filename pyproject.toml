@@ -30,9 +30,11 @@ select = [
 ]
 
 ignore = [
-    "E501",   # Longueur de ligne (déléguée au formateur)
+    "E501",   # Longueur de ligne
     "B008",   # Appels de fonctions dans les arguments par défaut
-    "I001",   # Ignore le tri strict des imports (isort)
+    "I001",   # Ignore le tri strict des imports
+    "W291",   # Ignore les espaces en fin de ligne
+    "W293",   # Ignore les espaces dans les lignes vides
 ]
 
 [tool.ruff.lint.isort]
