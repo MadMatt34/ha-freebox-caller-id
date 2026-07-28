@@ -38,5 +38,5 @@ class FreeboxCallerIDEntity(CoordinatorEntity[FreeboxCallerCoordinator]):
             model="Freebox Caller ID",
             sw_version=firmware_ver,
             configuration_url=f"http://{host}",
-            suggested_area="Entrée",
+            suggested_area="Home",
         )
