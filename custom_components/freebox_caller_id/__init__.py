@@ -1,18 +1,28 @@
 """Intégration Custom Freebox Caller ID pour Home Assistant."""
-import logging
-from datetime import timedelta
-import hmac
-import hashlib
-import time
+from __future__ import annotations
+
 import asyncio
+from datetime import timedelta
+import hashlib
+import hmac
+import logging
+import time
+
 import aiohttp
 
-from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DOMAIN, EVENT_INCOMING_CALL, CONF_HOST, CONF_APP_TOKEN, CONF_SCAN_INTERVAL, PLATFORMS
+from .const import (
+    CONF_APP_TOKEN,
+    CONF_HOST,
+    CONF_SCAN_INTERVAL,
+    DOMAIN,
+    EVENT_INCOMING_CALL,
+    PLATFORMS,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,18 +34,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     host = entry.data[CONF_HOST]
     app_id = "fr.ha.callerid"
     app_token = entry.data[CONF_APP_TOKEN]
-    
+
     scan_interval = entry.options.get(
         CONF_SCAN_INTERVAL, 
         entry.data.get(CONF_SCAN_INTERVAL, 2)
     )
 
     session = async_get_clientsession(hass)
-    
+
     coordinator = FreeboxCallerCoordinator(
         hass, session, host, app_id, app_token, scan_interval
     )
-    
+
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})
@@ -63,10 +73,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 class FreeboxCallerCoordinator(DataUpdateCoordinator):
     """Gestionnaire de mise à jour des données Freebox avec gestion d'erreurs avancée."""
-    
+
     def __init__(self, hass, session, host, app_id, app_token, scan_interval):
         super().__init__(
-            hass, _LOGGER, name="Freebox Caller ID",
+            hass,
+            _LOGGER,
+            name="Freebox Caller ID",
             update_interval=timedelta(seconds=scan_interval),
         )
         self.session = session
@@ -93,14 +105,16 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
             ).hexdigest()
 
             payload = {"app_id": self.app_id, "password": password}
-            async with self.session.post(f"http://{self.host}/api/v4/login/session/", json=payload, timeout=timeout) as resp:
+            async with self.session.post(
+                f"http://{self.host}/api/v4/login/session/", json=payload, timeout=timeout
+            ) as resp:
                 if resp.status != 200:
                     return False
                 data = await resp.json()
                 if data.get("success"):
                     self.session_token = data["result"]["session_token"]
                     return True
-        except (aiohttp.ClientError, asyncio.TimeoutError, Exception) as err:    # noqa: BLE001
+        except (aiohttp.ClientError, asyncio.TimeoutError, Exception) as err:  # noqa: BLE001
             _LOGGER.debug("Échec de la demande de session Freebox : %s", err)
         return False
 
@@ -108,7 +122,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
         """Calcule le backoff exponentiel et gère le niveau de log."""
         self._consecutive_failures += 1
         self.session_token = None  # Invalide la session pour forcer une ré-authentification
-        
+
         # Calcul exponentiel : 2s -> 4s -> 8s -> 16s -> 32s -> 60s max
         backoff_seconds = min(
             MAX_BACKOFF_INTERVAL,
@@ -145,7 +159,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
 
         try:
             if not self.session_token and not await self._async_get_session():
-                    self._handle_failure("Impossible d'ouvrir une session")
+                self._handle_failure("Impossible d'ouvrir une session")
 
             headers = {"X-Fbx-App-Auth": self.session_token}
             async with self.session.get(
@@ -183,7 +197,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
 
             # Récupère les 10 derniers appels de la liste Freebox
             last_10_calls = calls_result[:10]
-            
+
             # Le tout dernier appel (pour l'état principal et le binaire)
             last_call = last_10_calls[0]
 
@@ -217,7 +231,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                     "name": c.get("name") or "Inconnu",
                     "type": c.get("type"),
                     "duration": c.get("duration", 0),
-                    "timestamp": c.get("datetime")
+                    "timestamp": c.get("datetime"),
                 }
                 for c in last_10_calls
             ]
@@ -230,13 +244,13 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 "duration": duration,
                 "datetime": call_time,
                 "id": call_id,
-                "recent_calls": formatted_calls # <--- La liste des 10 appels
+                "recent_calls": formatted_calls,
             }
 
         except (aiohttp.ClientError, asyncio.TimeoutError) as err:
             self._handle_failure(f"Erreur réseau / timeout : {err}")
         except UpdateFailed:
             raise
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             _LOGGER.exception("Erreur lors de la récupération des appels")
             self._handle_failure(f"Erreur inattendue : {err}")
