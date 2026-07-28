@@ -21,11 +21,13 @@ class FreeboxRingingSensor(CoordinatorEntity, BinarySensorEntity):
 
     def __init__(self, coordinator, entry):
         super().__init__(coordinator)
+        # On force l'ID strict en anglais pour tout le monde
+        self.entity_id = "binary_sensor.freebox_caller_id_ringing"
+        
         self._attr_unique_id = f"{entry.entry_id}_ringing"
         self._attr_icon = "mdi:phone-ring"
         self._entry = entry
 
-        # Regroupement sous un Appareil dans Home Assistant
         host = entry.data.get(CONF_HOST, "mafreebox.freebox.fr")
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
