@@ -251,6 +251,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
             self._handle_failure(f"Erreur réseau / timeout : {err}")
         except UpdateFailed:
             raise
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             _LOGGER.exception("Erreur lors de la récupération des appels")
             self._handle_failure(f"Erreur inattendue : {err}")
