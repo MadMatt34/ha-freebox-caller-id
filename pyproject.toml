@@ -19,7 +19,7 @@ select = [
     "E",      # pycodestyle (erreurs)
     "W",      # pycodestyle (avertissements)
     "F",      # Pyflakes (erreurs de syntaxe / variables non utilisées)
-    "I",      # isort (tri automatique et strict des imports)
+    "I",      # isort (tri des imports)
     "UP",     # pyupgrade (modernisation de la syntaxe Python)
     "B",      # flake8-bugbear (détection de bugs et pièges courants)
     "SIM",    # flake8-simplify (simplification des expressions)
@@ -29,7 +29,7 @@ select = [
 ]
 
 ignore = [
-    "E501",   # Longueur de ligne
+    "E501",   # Longueur de ligne (déléguée au formateur)
     "B008",   # Appels de fonctions dans les arguments par défaut
     "I001",   # Ignore le tri strict des imports (isort)
 ]
