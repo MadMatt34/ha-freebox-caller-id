@@ -115,11 +115,12 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
             _LOGGER.debug("Échec de la demande de session Freebox : %s", err)
         return False
 
-    async def _async_fetch_system_info(self, headers: dict, timeout: aiohttp.ClientTimeout) -> None:
+    async def _async_fetch_system_info(self, headers: dict) -> None:
         """Récupère les informations système une seule fois au démarrage ou après reconnexion."""
         if self.system_info:
             return
         try:
+            timeout = aiohttp.ClientTimeout(total=5)
             async with self.session.get(
                 f"http://{self.host}/api/v4/system/",
                 headers=headers,
@@ -181,7 +182,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
             headers = {"X-Fbx-App-Auth": self.session_token}
 
             # Récupération unique des infos système si non encore chargées
-            await self._async_fetch_system_info(headers, timeout)
+            await self._async_fetch_system_info(headers)
 
             # Requête du journal d'appels
             async with self.session.get(
@@ -193,7 +194,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                     _LOGGER.debug("Session expirée (403), tentative de renouvellement...")
                     if await self._async_get_session():
                         headers["X-Fbx-App-Auth"] = self.session_token
-                        await self._async_fetch_system_info(headers, timeout)
+                        await self._async_fetch_system_info(headers)
                         async with self.session.get(
                             f"http://{self.host}/api/v4/call/log/",
                             headers=headers,
