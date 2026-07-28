@@ -106,7 +106,7 @@ Vous pouvez ajuster l'intervalle de vérification à tout moment :
 
 ---
 
-### 2. Capteur binaire : `binary_sensor.freebox_ringing`
+### 2. Capteur binaire : `binary_sensor.freebox_caller_id_ringing`
 - **Device Class** : `sound`
 - **État** :
     - `on` : Pendant que le téléphone sonne.
@@ -119,7 +119,7 @@ Vous pouvez ajuster l'intervalle de vérification à tout moment :
 
 ---
 
-### 3. Capteur : `sensor.freebox_last_call`
+### 3. Capteur : `sensor.freebox_caller_id_last_call`
 - **État** : Nom ou numéro du dernier appelant enregistré.
 - **Attributs enrichis :** Liste des 10 derniers appels avec les informations suivantes
   - `number` : Numéro du correspondant.
@@ -130,7 +130,7 @@ Vous pouvez ajuster l'intervalle de vérification à tout moment :
 
 ---
 
-## 🤖 Exemples d'automatisations YAML
+## 🤖 Exemples d'automatisations et dashboards YAML
 
 ### Exemple 1 : Notification mobile et annonce vocale TTS
 Déclenchement instantané à la réception d'un appel :
@@ -167,7 +167,7 @@ alias: "Freebox - Pause Musique / TV sur Sonnerie"
 description: "Gère la mise en pause et la reprise des médias pendant qu'un appel sonne"
 trigger:
   - platform: state
-    entity_id: binary_sensor.freebox_ringing
+    entity_id: binary_sensor.freebox_caller_id_ringing
     to: "on"
 action:
   # 1. Mise en pause de la TV ou enceinte
@@ -178,7 +178,7 @@ action:
   # 2. Attente de la fin de la sonnerie (passage du capteur à 'off')
   - wait_for_trigger:
       - platform: state
-        entity_id: binary_sensor.freebox_ringing
+        entity_id: binary_sensor.freebox_caller_id_ringing
         to: "off"
 
   # 3. Reprise de la lecture
@@ -196,7 +196,7 @@ Une carte d'historique sur votre tableau de bord Home Assistant en utilisant une
 type: markdown
 title: "📜 Historique des derniers appels Freebox"
 content: >
-  {% set calls = state_attr('sensor.freebox_last_call', 'calls') %}
+  {% set calls = state_attr('sensor.freebox_caller_id_last_call', 'calls') %}
   | Nom / Numéro | Type | Durée |
   | :--- | :--- | :--- |
   {% for call in calls %}
