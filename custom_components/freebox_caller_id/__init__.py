@@ -160,6 +160,8 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 self._handle_failure("Impossible d'ouvrir une session")
 
             headers = {"X-Fbx-App-Auth": self.session_token}
+
+            # 1. Requête du journal d'appels
             async with self.session.get(
                 f"http://{self.host}/api/v4/call/log/",
                 headers=headers,
@@ -189,9 +191,26 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
 
             self._handle_success()
 
+            # 2. Requête des informations système (pour firmware, modèle, etc.)
+            system_data = {}
+            try:
+                async with self.session.get(
+                    f"http://{self.host}/api/v4/system/",
+                    headers=headers,
+                    timeout=timeout,
+                ) as resp_sys:
+                    if resp_sys.status == 200:
+                        sys_json = await resp_sys.json()
+                        if sys_json.get("success"):
+                            system_data = sys_json.get("result", {})
+            except Exception as err:  # noqa: BLE001
+                _LOGGER.debug("Échec de la récupération des infos système : %s", err)
+
             calls_result = data.get("result", [])
             if not calls_result:
-                return {}
+                return {
+                    "system": system_data,
+                }
 
             # Récupère les 10 derniers appels de la liste Freebox
             last_10_calls = calls_result[:10]
@@ -243,6 +262,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 "datetime": call_time,
                 "id": call_id,
                 "recent_calls": formatted_calls,
+                "system": system_data,
             }
 
         except (aiohttp.ClientError, TimeoutError) as err:
