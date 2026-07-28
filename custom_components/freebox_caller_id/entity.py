@@ -48,7 +48,7 @@ class FreeboxCallerIDEntity(CoordinatorEntity[FreeboxCallerCoordinator]):
                 box_model = model_info.get("pretty_name") or model_info.get("name")
             elif isinstance(model_info, str):
                 box_model = model_info
-            if not raw_model:
+            if not box_model:
                 box_model = system_data.get("board_name")
 
         model_str = f"Freebox Server (modèle {box_model})" if box_model else "Freebox Server"
