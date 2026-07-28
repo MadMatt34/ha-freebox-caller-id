@@ -99,7 +99,7 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             session = async_get_clientsession(self.hass)
             status = None
-            
+
             try:
                 async with session.get(f"http://{self.host}/api/v4/login/authorize/{self.track_id}") as resp:
                     data = await resp.json()
@@ -114,7 +114,7 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     self._abort_if_unique_id_configured()
 
                 return self.async_create_entry(
-                    title="Freebox Caller ID", 
+                    title="Freebox Caller ID",
                     data={
                         CONF_HOST: self.host,
                         CONF_APP_TOKEN: self.app_token,
@@ -142,7 +142,7 @@ class FreeboxCallerIDOptionsFlow(config_entries.OptionsFlow):
             return self.async_create_entry(title="", data=user_input)
 
         current_interval = self.config_entry.options.get(
-            CONF_SCAN_INTERVAL, 
+            CONF_SCAN_INTERVAL,
             self.config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         )
 
