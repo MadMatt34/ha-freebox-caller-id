@@ -29,7 +29,6 @@ class FreeboxLastCallSensor(FreeboxCallerIDEntity, SensorEntity):
         """Initialise le capteur."""
         super().__init__(coordinator, entry)
         self._attr_unique_id = f"{entry.entry_id}_last_call"
-        self._attr_icon = "mdi:phone-log"
 
     @property
     def native_value(self) -> str:
