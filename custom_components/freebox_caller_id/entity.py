@@ -26,16 +26,23 @@ class FreeboxCallerIDEntity(CoordinatorEntity[FreeboxCallerCoordinator]):
     def device_info(self) -> DeviceInfo:
         """Informations centralisées de l'appareil."""
         host = self._entry.data.get(CONF_HOST, "mafreebox.freebox.fr")
+        
+        # ID court (ex: Freebox Server (a1b2c3))
+        short_id = self._entry.entry_id[:6]
+        device_name = f"Freebox Phone ({short_id})"
 
         firmware_ver = None
+        box_model = None
         if self.coordinator.data and isinstance(self.coordinator.data, dict):
             firmware_ver = self.coordinator.data.get("firmware_version")
+            box_model = self.coordinator.data.get("board_name")
+        model_name = f"Freebox Server ({box_model})"
 
         return DeviceInfo(
             identifiers={(DOMAIN, self._entry.entry_id)},
-            name="Freebox Server",
+            name=device_name,
             manufacturer="Free",
-            model="Freebox Caller ID",
+            model=model_name,
             sw_version=firmware_ver,
             configuration_url=f"http://{host}",
             suggested_area="Home",
