@@ -189,19 +189,70 @@ action:
 
 ---
 
-### Exemple 3 : Affichage des derniers appels reçus
-Une carte d'historique sur votre tableau de bord Home Assistant en utilisant une carte Markdown :
+### Exemple 3 : Affichage des derniers appels
+Une belle carte d'historique sur votre tableau de bord Home Assistant en utilisant une carte Markdown + Card-Mod :
 
 ```yaml
 type: markdown
-title: "📜 Historique des derniers appels Freebox"
-content: >
-  {% set calls = state_attr('sensor.freebox_caller_id_last_call', 'calls') %}
-  | Nom / Numéro | Type | Durée |
-  | :--- | :--- | :--- |
-  {% for call in calls %}
-  | **{{ call.name }}** <br><sub>{{ call.number }}</sub> | {{ call.type }} | {{ call.duration }}s |
+content: |
+  {%- set calls = state_attr('sensor.freebox_caller_id_last_call', 'calls') -%}
+  | Nom | Numéro | Date | Type | Durée |
+  | :--- | :--: | :--: | :--: | :--: |
+  {% for call in calls -%}
+    | **{{ call.name }}** | <a href="tel:{{ call.number }}">{{ "%s%s %s%s %s%s %s%s %s%s" % tuple(call.number) }}</a> | {{ call.timestamp | timestamp_custom("%d/%m/%y %Hh%M") }} | {{ call.type }} | {{ call.duration }}s |
   {% endfor %}
+text_only: true
+card_mod:
+  style:
+    ha-markdown $: |
+      tr td:not(:first-child) {
+        font-size: var(--ha-font-size-s);
+      }
+      tr td:nth-child(2) {
+        font-family: digital;
+        white-space: nowrap;
+      }
+      table {
+        width: 100%;
+        background: var(--card-background-color);
+        display: block;
+        height: 180px;
+        overflow-y: scroll !important;
+      }
+```
+
+---
+
+### Exemple 4 : Affichage d'un appel entrant
+Une belle carte pour apporter un visuel quand le téléphone sonne en utilisant une carte Tuile + Card-Mod :
+
+```yaml
+type: tile
+entity: binary_sensor.freebox_caller_id_ringing
+name: "Sonnerie : Appel entrant"
+state_content:
+  - caller_name
+  - caller_number
+tap_action:
+  action: none
+icon_tap_action:
+  action: none
+card_mod:
+  style: |
+    ha-state-icon {
+      animation: hithere 0.75s infinite;
+      color: var(--pink-color);
+    }
+    @keyframes hithere {
+      30% { transform: scale(1.2); }
+      40%, 60% { transform: rotate(-20deg) scale(1.2); }
+      50% { transform: rotate(20deg) scale(1.2); }
+      70% { transform: rotate(0deg) scale(1.2); }
+      100% { transform: scale(1); }
+    }
+visibility:
+  - condition: state
+    state: "on"
 ```
 
 ---
