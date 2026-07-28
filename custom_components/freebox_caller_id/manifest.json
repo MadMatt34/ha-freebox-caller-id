@@ -1,7 +1,7 @@
 {
   "domain": "freebox_caller_id",
   "name": "Freebox Caller ID",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "documentation": "https://github.com/MadMatt34/ha-freebox-caller-id",
   "issue_tracker": "https://github.com/MadMatt34/ha-freebox-caller-id/issues",
   "dependencies": [],
