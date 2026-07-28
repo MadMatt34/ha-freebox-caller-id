@@ -1,31 +1,30 @@
-# Freebox Caller ID - Intégration pour Home Assistant
+# Freebox Caller ID - Home Assistant Integration
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
 [![Version](https://img.shields.io/badge/version-1.1.0-green.svg)](https://github.com/)
 
 ![Freebox Caller ID for Home Assistant](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/logo.png)
 
-
-**Freebox Caller ID** est une intégration personnalisée pour Home Assistant permettant de détecter **en temps réel** les appels téléphoniques entrants sur la ligne fixe de votre [Freebox](https://www.free.fr/freebox), sans ajout de matériel supplémentaire.
-
----
-
-## 📌 Objectif
-
-Par défaut, l'[API Freebox OS](https://dev.freebox.fr/sdk/os/) n'émet aucun push lorsqu'un téléphone sonne. Cependant, la Freebox inscrit immédiatement l'appel entrant dans son registre (`/api/v4/call/log/`) dès la première sonnerie avec une durée égale à `0`. 
-
-Cette intégration effectue un scan HTTP rapide et asynchrone (polling toutes les 2 secondes par défaut) pour :
-1. Déclencher un **événement natif** (`freebox_incoming_call`) dès le premier signal de sonnerie.
-2. Activer un **capteur binaire** (`binary_sensor.sonnerie_freebox`) pendant toute la durée où le téléphone sonne, avec les informations de l'appelant.
-3. Conserver les données de l'appelant dans un **capteur dédié** (`sensor.dernier_appel_freebox`), et l'historique des 10 derniers appels.
-4. Fonctionner en **local**, sans cloud
-5. Gérer de manière transparente les redémarrages de la Freebox grâce à un algorithme de **reconnexion progressive** (*exponential backoff*) pour ne pas polluer les journaux de Home Assistant.
+**Freebox Caller ID** is a custom Home Assistant integration designed to detect incoming calls on your [Freebox](https://www.free.fr/freebox) landline **in real-time**, without requiring any additional hardware.
 
 ---
 
-## 🛠️ Structure des fichiers
+## 📌 Goal
 
-Dans votre dossier Home Assistant `/config/custom_components/freebox_caller_id/`, assurez-vous d'avoir l'arborescence suivante :
+By default, the [Freebox OS API](https://dev.freebox.fr/sdk/os/) does not send push notifications when a phone rings. However, the Freebox immediately registers incoming calls in its call log (`/api/v4/call/log/`) upon the very first ring with a duration of `0`.
+
+This integration performs fast, asynchronous HTTP polling (every 2 seconds by default) to:
+1. Fire a **native event** (`freebox_incoming_call`) on the first ring signal.
+2. Turn on a **binary sensor** (`binary_sensor.freebox_caller_id_ringing`) while the phone is ringing, enriched with caller information.
+3. Store the caller's details in a **dedicated sensor** (`sensor.freebox_caller_id_last_call`), alongside a history of the last 10 calls.
+4. Work **100% locally** without any cloud dependency.
+5. Smoothly handle Freebox reboots using an **exponential backoff** algorithm to avoid flooding Home Assistant log files.
+
+---
+
+## 🛠️ File Structure
+
+In your Home Assistant `/config/custom_components/freebox_caller_id/` directory, ensure you have the following file layout:
 
 ```text
 config/
@@ -38,6 +37,7 @@ config/
         ├── manifest.json
         ├── sensor.py
         └── translations/
+            ├── en.json
             └── fr.json
 ```
 
@@ -45,161 +45,162 @@ config/
 
 ## 🧩 Installation
 
-### Option 1 : Installation via HACS (recommandée)
-1. Ouvrir **HACS**  
-2. Cliquer sur **Ajouter un dépôt personnalisé**  
-3. Ajouter : https://github.com/MadMatt34/ha-freebox-caller-id
-4. Choisir la catégorie **Intégration**  
-6. Redémarrer Home Assistant
+### Option 1: HACS Installation (Recommended)
+1. Open **HACS** in Home Assistant.
+2. Click **Custom Repositories** (top right menu).
+3. Add: `https://github.com/MadMatt34/ha-freebox-caller-id`
+4. Select category: **Integration**.
+5. Click **Add**, then find and download **Freebox Caller ID**.
+6. Restart Home Assistant.
 
-### Option 2 : Installation manuelle
-1. Copiez le dossier `freebox_caller_id` dans `/config/custom_components/`.
-2. Redémarrez Home Assistant pour faire détecter la nouvelle intégration.
-
----
-
-## 🚀 Configuration de l'intégration
-
-L'installation se fait **100 % via l'interface graphique** de Home Assistant.
-
-### Étape 1 : Ajout de l'intégration dans Home Assistant
-1. Dans Home Assistant, allez dans **Paramètres** > **Appareils et services**.
-2. Cliquez sur **Ajouter une intégration** (en bas à droite).
-3. Recherchez **Freebox Caller ID** et sélectionnez-le.
-4. Laissez l'adresse IP / hôte par défaut (`mafreebox.freebox.fr`) et validez.
-
-### Étape 2 : Validation physique sur le Freebox Server
-1. L'assistant vous demande d'accorder l'autorisation.
-2. Rendez-vous devant votre boîtier **Freebox Server** (physiquement).
-3. Appuyez sur la **flèche de droite** (ou la touche de validation) sur l'écran tactile du boîtier pour accepter la demande **HA CallerID**.
-4. Revenez sur Home Assistant et cliquez sur **Soumettre**.
-
-### Étape 3 : Autorisation dans l'interface Freebox OS
-1. Connectez-vous sur votre espace Freebox OS : [http://mafreebox.freebox.fr](http://mafreebox.freebox.fr).
-2. Allez dans **Paramètres de la Freebox** > **Gestion des accès** > Onglet **Applications**.
-3. Cliquez sur la ligne **HA CallerID**.
-4. Cochez la case **Accès au journal d'appels**.
-5. Enregistrez.
+### Option 2: Manual Installation
+1. Copy the `freebox_caller_id` folder into your `/config/custom_components/` directory.
+2. Restart Home Assistant to detect the new integration.
 
 ---
 
-## ⚙️ Modifier les options de configuration
+## 🚀 Integration Setup
 
-Vous pouvez ajuster l'intervalle de vérification à tout moment :
-1. Allez dans **Paramètres** > **Appareils et services**.
-2. Sur la carte **Freebox Caller ID**, cliquez sur le bouton **Configurer**.
-3. Choisissez la fréquence de balayage (entre 1 et 60 secondes, 2s recommandé) et validez. L'intégration se rechargera automatiquement.
+Setup is performed **100% via the Home Assistant User Interface**.
 
----
+### Step 1: Add the integration in Home Assistant
+1. In Home Assistant, go to **Settings** > **Devices & Services**.
+2. Click **Add Integration** (bottom right).
+3. Search for **Freebox Caller ID** and select it.
+4. Leave the default IP/Host (`mafreebox.freebox.fr`) and validate.
 
-## 📡 Événements et Entités créés
+### Step 2: Physical approval on the Freebox Server
+1. The setup wizard will prompt you for physical authorization.
+2. Walk to your physical **Freebox Server** box.
+3. Press the **Right Arrow** (or validation button) on the touch screen to accept the **HA CallerID** request.
+4. Return to Home Assistant and click **Submit**.
 
-### 1. Événement Home Assistant : `freebox_incoming_call`
-Émis instantanément à l'arrivée de la première sonnerie d'un nouvel appel.
-
-**Données transmises dans `trigger.event.data` :**
-- `id` : Identifiant unique de l'appel Freebox.
-- `number` : Numéro de téléphone de l'appelant.
-- `name` : Nom de l'appelant (s'il est présent dans le répertoire Freebox) ou `"Inconnu"`.
-- `type` : Type d'appel (`missed`, `accepted`, etc.).
-- `datetime` : Horodatage UNIX / timestamp.
-
----
-
-### 2. Capteur binaire : `binary_sensor.freebox_caller_id_ringing`
-- **Device Class** : `sound`
-- **État** :
-    - `on` : Pendant que le téléphone sonne.
-    - `off` : Quand décroché ou après un délai d'attente maximum de 45s.
-- **Attributs enrichis :**
-  - `caller_name` : Nom du correspondant.
-  - `caller_number` : Numéro de téléphone.
-  - `call_datetime` : Horodatage de l'appel.
-  - `call_type` : Type d'appel.
+### Step 3: Grant permissions in Freebox OS
+1. Log in to your Freebox OS web interface: [http://mafreebox.freebox.fr](http://mafreebox.freebox.fr).
+2. Go to **Freebox Settings** > **Access Management** > **Applications** tab.
+3. Click on **HA CallerID**.
+4. Check the box for **Access to call log** (*Accès au journal d'appels*).
+5. Click **Save**.
 
 ---
 
-### 3. Capteur : `sensor.freebox_caller_id_last_call`
-- **État** : Nom ou numéro du dernier appelant enregistré.
-- **Attributs enrichis :** Liste des 10 derniers appels avec les informations suivantes
-  - `number` : Numéro du correspondant.
-  - `name` : Nom associé dans le répertoire.
-  - `type` : Type de l'appel.
-  - `duration` : Durée de communication en secondes.
-  - `timestamp` : Date/Heure de réception.
+## ⚙️ Configuration Options
+
+You can adjust the polling interval at any time:
+1. Go to **Settings** > **Devices & Services**.
+2. On the **Freebox Caller ID** card, click **Configure**.
+3. Choose the scan frequency (between 1 and 60 seconds; 2 seconds recommended) and save. The integration will reload automatically.
 
 ---
 
-## 🤖 Exemples d'automatisations et dashboards
+## 📡 Events and Created Entities
 
-### Exemple 1 : Notification mobile et annonce vocale TTS
-Déclenchement instantané à la réception d'un appel :
+### 1. Home Assistant Event: `freebox_incoming_call`
+Fired instantaneously as soon as a new incoming call starts ringing.
+
+**Event payload in `trigger.event.data`:**
+- `id`: Unique identifier for the Freebox call.
+- `number`: Caller's phone number.
+- `name`: Caller's name (if saved in the Freebox phonebook) or `"Unknown"`.
+- `type`: Call type (`missed`, `accepted`, etc.).
+- `datetime`: UNIX timestamp of the call.
+
+---
+
+### 2. Binary Sensor: `binary_sensor.freebox_caller_id_ringing`
+- **Device Class**: `sound`
+- **State**:
+    - `on`: While the phone is ringing.
+    - `off`: When answered or after a maximum timeout of 45 seconds.
+- **Attributes:**
+  - `caller_name`: Name of the caller.
+  - `caller_number`: Phone number.
+  - `call_datetime`: Timestamp of the call.
+  - `call_type`: Call type.
+
+---
+
+### 3. Sensor: `sensor.freebox_caller_id_last_call`
+- **State**: Name or phone number of the last recorded caller.
+- **Attributes:** List of the last 10 calls with the following details:
+  - `number`: Phone number.
+  - `name`: Associated name in the contacts list.
+  - `type`: Type of call.
+  - `duration`: Call duration in seconds.
+  - `timestamp`: Date/Time received.
+
+---
+
+## 🤖 Automations and Dashboard Examples
+
+### Example 1: Mobile Notification and Voice TTS Announcement
+Triggers instantly when an incoming call arrives:
 
 ```yaml
-alias: "Freebox - Notification et TTS Appel Entrant"
-description: "Notifie sur le smartphone et annonce le nom du correspondant sur l'enceinte du salon"
+alias: "Freebox - Incoming Call Notification and TTS"
+description: "Notifies smartphone and announces caller name on the living room speaker"
 trigger:
   - platform: event
     event_type: freebox_incoming_call
 action:
-  # Notification Push Mobile
+  # Mobile Push Notification
   - action: notify.notify
     data:
-      title: "📞 Appel fixe Freebox"
-      message: "Appel entrant de {{ trigger.event.data.name }} ({{ trigger.event.data.number }})"
+      title: "📞 Freebox Landline Call"
+      message: "Incoming call from {{ trigger.event.data.name }} ({{ trigger.event.data.number }})"
 
-  # Annonce vocale sur enceinte connectée
+  # Voice announcement on connected speaker
   - action: tts.speak
     target:
-      entity_id: tts.google_fr_fr
+      entity_id: tts.google_en_com
     data:
-      media_player_entity_id: media_player.salon_speaker
-      message: "Appel téléphonique entrant de {{ trigger.event.data.name }}"
+      media_player_entity_id: media_player.living_room_speaker
+      message: "Incoming phone call from {{ trigger.event.data.name }}"
 ```
 
 ---
 
-### Exemple 2 : Pause multimédia automatique et reprise après la sonnerie
-Met en pause le lecteur multimédia pendant toute la durée de la sonnerie et reprend la lecture une fois l'appel décroché ou abandonné :
+### Example 2: Automatic Media Pause and Resume on Ringing
+Pauses media playback while the phone is ringing and resumes playing once answered or stopped:
 
 ```yaml
-alias: "Freebox - Pause Musique / TV sur Sonnerie"
-description: "Gère la mise en pause et la reprise des médias pendant qu'un appel sonne"
+alias: "Freebox - Pause/Resume Media on Ringing"
+description: "Handles media playback pause and resume during ringing phone calls"
 trigger:
   - platform: state
     entity_id: binary_sensor.freebox_caller_id_ringing
     to: "on"
 action:
-  # 1. Mise en pause de la TV ou enceinte
+  # 1. Pause TV or speaker
   - action: media_player.media_pause
     target:
-      entity_id: media_player.salon_tv
+      entity_id: media_player.living_room_tv
 
-  # 2. Attente de la fin de la sonnerie (passage du capteur à 'off')
+  # 2. Wait until phone stops ringing (sensor turns 'off')
   - wait_for_trigger:
       - platform: state
         entity_id: binary_sensor.freebox_caller_id_ringing
         to: "off"
 
-  # 3. Reprise de la lecture
+  # 3. Resume playback
   - action: media_player.media_play
     target:
-      entity_id: media_player.salon_tv
+      entity_id: media_player.living_room_tv
 ```
 
 ---
 
-### Exemple 3 : Affichage des derniers appels
-Une belle carte d'historique sur votre tableau de bord Home Assistant en utilisant une carte Markdown + Card-Mod :
+### Example 3: Recent Call History Dashboard Card
+A call history table for your Home Assistant dashboard using Markdown + Card-Mod:
 
 ```yaml
 type: markdown
 content: |
-  {%- set calls = state_attr('sensor.freebox_caller_id_last_call', 'calls') -%}
-  | Nom | Numéro | Date | Type | Durée |
+  {%- set calls = state_attr('sensor.freebox_caller_id_last_call', 'recent_calls') -%}
+  | Name | Number | Date | Type | Duration |
   | :--- | :--: | :--: | :--: | :--: |
   {% for call in calls -%}
-    | **{{ call.name }}** | <a href="tel:{{ call.number }}">{{ "%s%s %s%s %s%s %s%s %s%s" % tuple(call.number) }}</a> | {{ call.timestamp | timestamp_custom("%d/%m/%y %Hh%M") }} | {{ call.type }} | {{ call.duration }}s |
+    | **{{ call.name }}** | <a href="tel:{{ call.number }}">{{ "%s%s %s%s %s%s %s%s %s%s" % tuple(call.number) }}</a> | {{ call.timestamp | timestamp_custom("%d/%m/%y %H:%M") }} | {{ call.type }} | {{ call.duration }}s |
   {% endfor %}
 text_only: true
 card_mod:
@@ -223,13 +224,13 @@ card_mod:
 
 ---
 
-### Exemple 4 : Affichage d'un appel entrant
-Une belle carte pour apporter un visuel quand le téléphone sonne en utilisant une carte Tuile + Card-Mod :
+### Example 4: Animated Incoming Call Card
+An animated tile card that appears when the phone rings (uses Tile Card + Card-Mod):
 
 ```yaml
 type: tile
 entity: binary_sensor.freebox_caller_id_ringing
-name: "Sonnerie : Appel entrant"
+name: "Ringing: Incoming Call"
 state_content:
   - caller_name
   - caller_number
@@ -257,23 +258,23 @@ visibility:
 
 ---
 
-## 🛡️ Gestion des Erreurs
+## 🛡️ Error Handling
 
-En cas de redémarrage de la Freebox ou de mise à jour du firmware :
-- Un avertissement unique est inscrit dans les journaux de Home Assistant lors de la perte de communication.
-- L'intégration bascule en mode **Backoff Exponentiel** (`2s -> 4s -> 8s -> 16s -> 32s -> 60s`).
-- Dès le retour en ligne de la Freebox, la session est automatiquement ré-authentifiée et l'intervalle de balayage d'origine est rétabli, sans nécessiter de redémarrage de Home Assistant.
+If your Freebox reboots or undergoes a firmware update:
+- A single warning log is logged in Home Assistant when communication is lost.
+- The integration enters **Exponential Backoff** mode (`2s -> 4s -> 8s -> 16s -> 32s -> 60s`).
+- Once the Freebox comes back online, the session automatically re-authenticates and restores the original polling interval without requiring a Home Assistant restart.
 
 ---
 
-## 🛠️ Dépannage
+## 🛠️ Troubleshooting
 
-- Vérifiez que votre Freebox est accessible sur le réseau local
-- Assurez-vous que Home Assistant peut communiquer avec la Freebox
-- Consultez les logs : **Paramètres → Système → Journaux**
-- Diagnostics & Vie privée : Exportez vos fichiers de diagnostic en toute sécurité lors de l'ouverture d'un ticket sur GitHub ; vos jetons d'accès, identifiants et données personnelles (numéros de téléphone et noms des correspondants) sont automatiquement anonymisés.
+- Verify that your Freebox is accessible on your local network.
+- Ensure Home Assistant can reach the Freebox host IP.
+- Check logs: **Settings → System → Logs**.
+- Diagnostics & Privacy: You can safely export diagnostic files when opening an issue on GitHub. Access tokens, credentials, and sensitive personal data (such as phone numbers and contact names) are automatically anonymized.
 
 ---
 
 ### CREDITS
-*Inspiré de [https://github.com/jystervinou/freebox-caller-id](https://github.com/jystervinou/freebox-caller-id) et largement fait avec l'IA*
+*Inspired by [https://github.com/jystervinou/freebox-caller-id](https://github.com/jystervinou/freebox-caller-id) and largely built with AI support.*
