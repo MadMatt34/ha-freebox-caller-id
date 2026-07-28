@@ -83,7 +83,7 @@ L'installation se fait **100 % via l'interface graphique** de Home Assistant.
 
 ---
 
-## ⚙️ Options de configuration UI
+## ⚙️ Modifier les options de configuration
 
 Vous pouvez ajuster l'intervalle de vérification à tout moment :
 1. Allez dans **Paramètres** > **Appareils et services**.
@@ -130,7 +130,7 @@ Vous pouvez ajuster l'intervalle de vérification à tout moment :
 
 ---
 
-## 🤖 Exemples d'automatisations et dashboards YAML
+## 🤖 Exemples d'automatisations et dashboards
 
 ### Exemple 1 : Notification mobile et annonce vocale TTS
 Déclenchement instantané à la réception d'un appel :
