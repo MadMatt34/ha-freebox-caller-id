@@ -1,39 +1,35 @@
 """Capteur affichant le dernier appelant et l'historique récent."""
+from __future__ import annotations
+
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, CONF_HOST
+from .const import DOMAIN
+from .entity import FreeboxCallerIDEntity
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Configuration du sensor."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities([FreeboxLastCallSensor(coordinator, entry)])
 
-class FreeboxLastCallSensor(CoordinatorEntity, SensorEntity):
+
+class FreeboxLastCallSensor(FreeboxCallerIDEntity, SensorEntity):
     """Entité stockant le dernier appel et l'historique des 10 derniers appels."""
 
-    _attr_has_entity_name = True
     _attr_translation_key = "last_call"
 
-    def __init__(self, coordinator, entry):
-        super().__init__(coordinator)
-        # On force l'ID strict en anglais pour tout le monde
-        self.entity_id = "sensor.freebox_caller_id_last_call"
-        
+    def __init__(self, coordinator, entry) -> None:
+        """Initialise le capteur."""
+        super().__init__(coordinator, entry)
         self._attr_unique_id = f"{entry.entry_id}_last_call"
         self._attr_icon = "mdi:phone-log"
-        self._entry = entry
-
-        host = entry.data.get(CONF_HOST, "mafreebox.freebox.fr")
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name="Freebox Caller ID",
-            manufacturer="Free",
-            model="Freebox Server",
-            configuration_url=f"http://{host}",
-        )
 
     @property
     def native_value(self) -> str:
