@@ -227,15 +227,19 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
             last_call = last_10_calls[0]
 
             call_id = last_call.get("id")
-            call_type = last_call.get("type")  # "incoming", "outgoing", ou "missed"
+            call_type = last_call.get("type")  # "accepted", "missed", ou "outgoing"
             duration = last_call.get("duration", 0)
             call_time = last_call.get("datetime", time.time())
 
-            # 1. La sonnerie s'active UNIQUEMENT pour un appel ENTRANT actif
+            # Un appel entrant Freebox est identifié par un type "accepted" ou "missed" (pas "outgoing")
+            is_incoming = call_type in ("accepted", "missed") or call_type != "outgoing"
+
+            # 1. La sonnerie s'active si c'est un appel entrant, non décroché (duration == 0) et récent (< 60s)
+            now = time.time()
             is_ringing = (
-                call_type == "incoming"
+                is_incoming
                 and duration == 0
-                and (time.time() - call_time) < 45
+                and abs(now - call_time) < 60
             )
 
             # 2. Déclenchement de l'événement UNIQUEMENT pour un NOUVEL appel ENTRANT
@@ -244,8 +248,8 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
             elif call_id != self._last_notified_call_id:
                 self._last_notified_call_id = call_id
 
-                # On filtre explicitement sur "incoming" avant d'émettre l'événement HA
-                if call_type == "incoming" and is_ringing:
+                # Déclenchement de l'événement si c'est un nouvel appel entrant
+                if is_incoming:
                     event_data = {
                         "id": call_id,
                         "number": last_call.get("number"),
