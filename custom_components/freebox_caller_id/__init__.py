@@ -26,6 +26,7 @@ _LOGGER = logging.getLogger(__name__)
 
 MAX_BACKOFF_INTERVAL = 60  # Intervalle maximal en secondes en cas de panne
 
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Initialisation du composant via l'interface UI."""
     host = entry.data[CONF_HOST]
@@ -66,6 +67,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
+
 
 class FreeboxCallerCoordinator(DataUpdateCoordinator):
     """Gestionnaire de mise à jour des données Freebox avec gestion d'erreurs avancée."""
@@ -225,23 +227,33 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
             last_call = last_10_calls[0]
 
             call_id = last_call.get("id")
+            call_type = last_call.get("type")  # "incoming", "outgoing", ou "missed"
             duration = last_call.get("duration", 0)
             call_time = last_call.get("datetime", time.time())
 
-            is_ringing = duration == 0 and (time.time() - call_time) < 45
+            # 1. La sonnerie s'active UNIQUEMENT pour un appel ENTRANT actif
+            is_ringing = (
+                call_type == "incoming"
+                and duration == 0
+                and (time.time() - call_time) < 45
+            )
 
+            # 2. Déclenchement de l'événement UNIQUEMENT pour un NOUVEL appel ENTRANT
             if self._last_notified_call_id is None:
                 self._last_notified_call_id = call_id
-            elif call_id != self._last_notified_call_id and is_ringing:
+            elif call_id != self._last_notified_call_id:
                 self._last_notified_call_id = call_id
-                event_data = {
-                    "id": call_id,
-                    "number": last_call.get("number"),
-                    "name": last_call.get("name") or "Inconnu",
-                    "type": last_call.get("type"),
-                    "datetime": call_time,
-                }
-                self.hass.bus.async_fire(EVENT_INCOMING_CALL, event_data)
+
+                # On filtre explicitement sur "incoming" avant d'émettre l'événement HA
+                if call_type == "incoming" and is_ringing:
+                    event_data = {
+                        "id": call_id,
+                        "number": last_call.get("number"),
+                        "name": last_call.get("name") or "Inconnu",
+                        "type": call_type,
+                        "datetime": call_time,
+                    }
+                    self.hass.bus.async_fire(EVENT_INCOMING_CALL, event_data)
 
             formatted_calls = [
                 {
@@ -259,7 +271,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 "is_ringing": is_ringing,
                 "caller_name": last_call.get("name") or "Inconnu",
                 "caller_number": last_call.get("number"),
-                "call_type": last_call.get("type"),
+                "call_type": call_type,
                 "duration": duration,
                 "datetime": call_time,
                 "id": call_id,
