@@ -14,6 +14,8 @@ CONF_HOST = "host"
 CONF_APP_TOKEN = "app_token"
 CONF_SCAN_INTERVAL = "scan_interval"
 DEFAULT_SCAN_INTERVAL = 2
+CONF_RINGING_TIMEOUT = "ringing_timeout"
+DEFAULT_RINGING_TIMEOUT = 45
 
 # Ajout des plateformes Home Assistant
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR]
