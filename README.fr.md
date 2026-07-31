@@ -17,8 +17,8 @@ Par défaut, l'[API Freebox OS](https://dev.freebox.fr/sdk/os/) n'émet aucun pu
 
 Cette intégration effectue un scan HTTP rapide et asynchrone (polling toutes les 2 secondes par défaut) pour :
 1. Déclencher un **événement natif** (`freebox_incoming_call`) dès le premier signal de sonnerie.
-2. Activer un **capteur binaire** (`binary_sensor.sonnerie_freebox`) pendant toute la durée où le téléphone sonne, avec les informations de l'appelant.
-3. Conserver les données de l'appelant dans un **capteur dédié** (`sensor.dernier_appel_freebox`), et l'historique des 10 derniers appels.
+2. Activer un **capteur binaire** (`binary_sensor.piece_freebox_phone_xxxxxx_sonnerie`) pendant toute la durée où le téléphone sonne, avec les informations de l'appelant.
+3. Conserver les données de l'appelant dans un **capteur dédié** (`sensor.piece_freebox_phone_xxxxxx_dernier_appel`), et l'historique des 10 derniers appels.
 4. Fonctionner en **local**, sans cloud
 5. Gérer de manière transparente les redémarrages de la Freebox grâce à un algorithme de **reconnexion progressive** (*exponential backoff*) pour ne pas polluer les journaux de Home Assistant.
 
@@ -107,7 +107,7 @@ Vous pouvez ajuster l'intervalle de vérification à tout moment :
 
 ---
 
-### 2. Capteur binaire : `binary_sensor.freebox_caller_id_ringing`
+### 2. Capteur binaire : `binary_sensor.piece_freebox_phone_xxxxxx_sonnerie`
 - **Device Class** : `sound`
 - **État** :
     - `on` : Pendant que le téléphone sonne.
@@ -120,7 +120,7 @@ Vous pouvez ajuster l'intervalle de vérification à tout moment :
 
 ---
 
-### 3. Capteur : `sensor.freebox_caller_id_last_call`
+### 3. Capteur : `sensor.piece_freebox_phone_xxxxxx_dernier_appel`
 - **État** : Nom ou numéro du dernier appelant enregistré.
 - **Attributs enrichis :** Liste des 10 derniers appels avec les informations suivantes
   - `number` : Numéro du correspondant.
@@ -168,7 +168,7 @@ alias: "Freebox - Pause Musique / TV sur Sonnerie"
 description: "Gère la mise en pause et la reprise des médias pendant qu'un appel sonne"
 trigger:
   - platform: state
-    entity_id: binary_sensor.freebox_caller_id_ringing
+    entity_id: binary_sensor.piece_freebox_phone_xxxxxx_sonnerie
     to: "on"
 action:
   # 1. Mise en pause de la TV ou enceinte
@@ -179,7 +179,7 @@ action:
   # 2. Attente de la fin de la sonnerie (passage du capteur à 'off')
   - wait_for_trigger:
       - platform: state
-        entity_id: binary_sensor.freebox_caller_id_ringing
+        entity_id: binary_sensor.piece_freebox_phone_xxxxxx_sonnerie
         to: "off"
 
   # 3. Reprise de la lecture
@@ -195,12 +195,15 @@ Une belle carte d'historique sur votre tableau de bord Home Assistant en utilisa
 
 ```yaml
 type: markdown
-content: |
-  {%- set calls = state_attr('sensor.freebox_caller_id_last_call', 'calls') -%}
-  | Nom | Numéro | Date | Type | Durée |
-  | :--- | :--: | :--: | :--: | :--: |
+content: >
+  {%- set calls = state_attr('sensor.piece_freebox_phone_xxxxxx_dernier_appel',
+  'calls') -%}
+  | | Nom | Numéro | Date | Durée |
+  
+  | :--: | :--- | :--: | :--: | :--: |
+  
   {% for call in calls -%}
-    | **{{ call.name }}** | <a href="tel:{{ call.number }}">{{ "%s%s %s%s %s%s %s%s %s%s" % tuple(call.number) }}</a> | {{ call.timestamp | timestamp_custom("%d/%m/%y %Hh%M") }} | {{ call.type }} | {{ call.duration }}s |
+    | <ha-icon icon="mdi:phone-{{- call.type | replace('accepted', 'incoming') -}}"></ha-icon> | **{{ call.name }}** | <a href="tel:{{ call.number }}">{{ call.number }}</a> | {{ call.timestamp | timestamp_custom("%d/%m %Hh%M") }} | {{ call.duration }}s |
   {% endfor %}
 text_only: true
 card_mod:
@@ -209,16 +212,33 @@ card_mod:
       tr td:not(:first-child) {
         font-size: var(--ha-font-size-s);
       }
-      tr td:nth-child(2) {
+      tr td:nth-child(3) {
         font-family: digital;
         white-space: nowrap;
+      }
+      div {
+        overflow-y: scroll !important;
+        scrollbar-width: thin;
+        height: 180px;
       }
       table {
         width: 100%;
         background: var(--card-background-color);
-        display: block;
-        height: 180px;
-        overflow-y: scroll !important;
+      }
+      table > td {
+        white-space: nowrap;
+      }
+      ha-icon {
+        --mdc-icon-size: var(--ha-font-size-xl) !important;
+      }
+      ha-icon[icon="mdi:phone-missed"] {
+        color: var(--error-color);
+      }
+      ha-icon[icon="mdi:phone-incoming"] {
+        color: var(--warning-color);
+      }
+      ha-icon[icon="mdi:phone-outgoing"] {
+        color: var(--success-color);
       }
 ```
 
@@ -229,7 +249,7 @@ Une belle carte pour apporter un visuel quand le téléphone sonne en utilisant 
 
 ```yaml
 type: tile
-entity: binary_sensor.freebox_caller_id_ringing
+entity: binary_sensor.piece_freebox_phone_xxxxxx_sonnerie
 name: "Sonnerie : Appel entrant"
 state_content:
   - caller_name
