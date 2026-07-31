@@ -16,11 +16,13 @@ from .const import (
     APP_VERSION,
     CONF_APP_TOKEN,
     CONF_HOST,
-    CONF_SCAN_INTERVAL,
     DEFAULT_HOST,
-    DEFAULT_SCAN_INTERVAL,
     DEVICE_NAME,
     DOMAIN,
+    CONF_RINGING_TIMEOUT,
+    CONF_SCAN_INTERVAL,
+    DEFAULT_RINGING_TIMEOUT,
+    DEFAULT_SCAN_INTERVAL
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -132,18 +134,6 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders={"host": self.host}
         )
 
-
-
-import voluptuous as vol
-import homeassistant.helpers.config_validation as cv
-
-from .const import (
-    CONF_SCAN_INTERVAL,
-    CONF_RINGING_TIMEOUT,
-    DEFAULT_RINGING_TIMEOUT,
-    DOMAIN,
-)
-
 class FreeboxCallerIDOptionsFlow(config_entries.OptionsFlow):
     """Gère les options via le bouton Configurer de l'UI."""
 
@@ -170,15 +160,17 @@ class FreeboxCallerIDOptionsFlow(config_entries.OptionsFlow):
                         min=1,
                         max=60,
                         step=1,
-                        mode=selector.NumberSelectorMode.BOX,
+                        mode=selector.NumberSelectorMode.BOX
+                    )
                 ),
                 vol.Optional(CONF_RINGING_TIMEOUT, default=ringing_timeout): selector.NumberSelector(
                     selector.NumberSelectorConfig(
                         min=1,
-                        max=60,
+                        max=180,
                         step=1,
-                        mode=selector.NumberSelectorMode.BOX,
-                ),
+                        mode=selector.NumberSelectorMode.BOX
+                    )
+                )
             }
         )
 
