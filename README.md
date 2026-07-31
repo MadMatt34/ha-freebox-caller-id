@@ -16,11 +16,11 @@
 By default, the [Freebox OS API](https://dev.freebox.fr/sdk/os/) does not send push notifications when a phone rings. However, the Freebox immediately registers incoming calls in its call log (`/api/v4/call/log/`) upon the very first ring with a duration of `0`.
 
 This integration performs fast, asynchronous HTTP polling (every 2 seconds by default) to:
-1. Fire a **native event** (`freebox_incoming_call`) on the first ring signal.
-2. Turn on a **binary sensor** (`binary_sensor.area_freebox_phone_xxxxxx_ringing`) while the phone is ringing, enriched with caller information.
-3. Store the caller's details in a **dedicated sensor** (`sensor.area_freebox_phone_xxxxxx_last_call`), alongside a history of the last 10 calls.
-4. Work **100% locally** without any cloud dependency.
-5. Smoothly handle Freebox reboots using an **exponential backoff** algorithm to avoid flooding Home Assistant log files.
+- Fire a **native event** (`freebox_incoming_call`) on the first ring signal.
+- Turn on a **binary sensor** (`binary_sensor.area_freebox_phone_xxxxxx_ringing`) while the phone is ringing, enriched with caller information.
+- Store the caller's details in a **dedicated sensor** (`sensor.area_freebox_phone_xxxxxx_last_call`), alongside a history of the last 10 calls.
+- Work **100% locally** without any cloud dependency.
+- Smoothly handle Freebox reboots using an **exponential backoff** algorithm to avoid flooding Home Assistant log files.
 
 ---
 
@@ -67,6 +67,7 @@ Setup is performed **100% via the Home Assistant User Interface**.
 
 ### Step 1: Add the integration in Home Assistant
 1. In Home Assistant, go to **Settings** > **Devices & Services**.
+   or click [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
 2. Click **Add Integration** (bottom right).
 3. Search for **Freebox Caller ID** and select it.
 4. Leave the default IP/Host (`mafreebox.freebox.fr`) and validate.
@@ -88,10 +89,13 @@ Setup is performed **100% via the Home Assistant User Interface**.
 
 ## ⚙️ Configuration Options
 
-You can adjust the polling interval at any time:
+You can adjust some settings at any time:
 1. Go to **Settings** > **Devices & Services**.
 2. On the **Freebox Caller ID** card, click **Configure**.
-3. Choose the scan frequency (between 1 and 60 seconds; 2 seconds recommended) and save. The integration will reload automatically.
+3. Change the settings:
+   - Polling frequency : **Scan interval** (between 1 and 60 seconds; 2 seconds recommended and as default)
+   - Active ring timeout : **Maximum ringing duration** (between 1 and 180 seconds; 45 seconds as default)
+4. Save. The integration will reload automatically.
 
 ---
 
