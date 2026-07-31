@@ -16,11 +16,11 @@
 Par défaut, l'[API Freebox OS](https://dev.freebox.fr/sdk/os/) n'émet aucun push lorsqu'un téléphone sonne. Cependant, la Freebox inscrit immédiatement l'appel entrant dans son registre (`/api/v4/call/log/`) dès la première sonnerie avec une durée égale à `0`. 
 
 Cette intégration effectue un scan HTTP rapide et asynchrone (polling toutes les 2 secondes par défaut) pour :
-1. Déclencher un **événement natif** (`freebox_incoming_call`) dès le premier signal de sonnerie.
-2. Activer un **capteur binaire** (`binary_sensor.piece_freebox_phone_xxxxxx_sonnerie`) pendant toute la durée où le téléphone sonne, avec les informations de l'appelant.
-3. Conserver les données de l'appelant dans un **capteur dédié** (`sensor.piece_freebox_phone_xxxxxx_dernier_appel`), et l'historique des 10 derniers appels.
-4. Fonctionner en **local**, sans cloud
-5. Gérer de manière transparente les redémarrages de la Freebox grâce à un algorithme de **reconnexion progressive** (*exponential backoff*) pour ne pas polluer les journaux de Home Assistant.
+- Déclencher un **événement natif** (`freebox_incoming_call`) dès le premier signal de sonnerie.
+- Activer un **capteur binaire** (`binary_sensor.piece_freebox_phone_xxxxxx_sonnerie`) pendant toute la durée où le téléphone sonne, avec les informations de l'appelant.
+- Conserver les données de l'appelant dans un **capteur dédié** (`sensor.piece_freebox_phone_xxxxxx_dernier_appel`), et l'historique des 10 derniers appels.
+- Fonctionner en **local**, sans cloud
+- Gérer de manière transparente les redémarrages de la Freebox grâce à un algorithme de **reconnexion progressive** (*exponential backoff*) pour ne pas polluer les journaux de Home Assistant.
 
 ---
 
@@ -65,7 +65,7 @@ L'installation se fait **100 % via l'interface graphique** de Home Assistant.
 
 ### Étape 1 : Ajout de l'intégration dans Home Assistant
 1. Dans Home Assistant, allez dans **Paramètres** > **Appareils et services**.
- [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/) 
+> [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/) <
 3. Cliquez sur **Ajouter une intégration** (en bas à droite).
 4. Recherchez **Freebox Caller ID** et sélectionnez-le.
 5. Laissez l'adresse IP / hôte par défaut (`mafreebox.freebox.fr`) et validez.
