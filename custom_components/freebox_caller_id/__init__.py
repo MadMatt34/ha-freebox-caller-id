@@ -16,10 +16,13 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import (
     CONF_APP_TOKEN,
     CONF_HOST,
-    CONF_SCAN_INTERVAL,
     DOMAIN,
     EVENT_INCOMING_CALL,
     PLATFORMS,
+    CONF_SCAN_INTERVAL,
+    CONF_RINGING_TIMEOUT,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_RINGING_TIMEOUT,
 )
 
 _LOGGER = logging.getLogger(__name__)
