@@ -33,9 +33,9 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry):
+    def async_get_options_flow(config_entry: config_entries.ConfigEntry):
         """Dit à Home Assistant qu'un menu d'options existe."""
-        return FreeboxCallerIDOptionsFlow()
+        return FreeboxCallerIDOptionsFlow(config_entry)
 
     def __init__(self):
         """Initialisation."""
