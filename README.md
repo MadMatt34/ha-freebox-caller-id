@@ -17,8 +17,8 @@ By default, the [Freebox OS API](https://dev.freebox.fr/sdk/os/) does not send p
 
 This integration performs fast, asynchronous HTTP polling (every 2 seconds by default) to:
 1. Fire a **native event** (`freebox_incoming_call`) on the first ring signal.
-2. Turn on a **binary sensor** (`binary_sensor.freebox_caller_id_ringing`) while the phone is ringing, enriched with caller information.
-3. Store the caller's details in a **dedicated sensor** (`sensor.freebox_caller_id_last_call`), alongside a history of the last 10 calls.
+2. Turn on a **binary sensor** (`binary_sensor.area_freebox_phone_xxxxxx_ringing`) while the phone is ringing, enriched with caller information.
+3. Store the caller's details in a **dedicated sensor** (`sensor.area_freebox_phone_xxxxxx_last_call`), alongside a history of the last 10 calls.
 4. Work **100% locally** without any cloud dependency.
 5. Smoothly handle Freebox reboots using an **exponential backoff** algorithm to avoid flooding Home Assistant log files.
 
@@ -109,7 +109,7 @@ Fired instantaneously as soon as a new incoming call starts ringing.
 
 ---
 
-### 2. Binary Sensor: `binary_sensor.freebox_caller_id_ringing`
+### 2. Binary Sensor: `binary_sensor.area_freebox_phone_xxxxxx_ringing`
 - **Device Class**: `sound`
 - **State**:
     - `on`: While the phone is ringing.
@@ -122,7 +122,7 @@ Fired instantaneously as soon as a new incoming call starts ringing.
 
 ---
 
-### 3. Sensor: `sensor.freebox_caller_id_last_call`
+### 3. Sensor: `sensor.area_freebox_phone_xxxxxx_last_call`
 - **State**: Name or phone number of the last recorded caller.
 - **Attributes:** List of the last 10 calls with the following details:
   - `number`: Phone number.
@@ -170,7 +170,7 @@ alias: "Freebox - Pause/Resume Media on Ringing"
 description: "Handles media playback pause and resume during ringing phone calls"
 trigger:
   - platform: state
-    entity_id: binary_sensor.freebox_caller_id_ringing
+    entity_id: binary_sensor.area_freebox_phone_xxxxxx_ringing
     to: "on"
 action:
   # 1. Pause TV or speaker
@@ -181,7 +181,7 @@ action:
   # 2. Wait until phone stops ringing (sensor turns 'off')
   - wait_for_trigger:
       - platform: state
-        entity_id: binary_sensor.freebox_caller_id_ringing
+        entity_id: binary_sensor.area_freebox_phone_xxxxxx_ringing
         to: "off"
 
   # 3. Resume playback
@@ -197,12 +197,15 @@ A call history table for your Home Assistant dashboard using Markdown + Card-Mod
 
 ```yaml
 type: markdown
-content: |
-  {%- set calls = state_attr('sensor.freebox_caller_id_last_call', 'recent_calls') -%}
-  | Name | Number | Date | Type | Duration |
-  | :--- | :--: | :--: | :--: | :--: |
+content: >
+  {%- set calls = state_attr('sensor.area_freebox_phone_xxxxxx_last_call',
+  'calls') -%}
+  | | Name | Number | Date | Duration |
+  
+  | :--: | :--- | :--: | :--: | :--: |
+  
   {% for call in calls -%}
-    | **{{ call.name }}** | <a href="tel:{{ call.number }}">{{ "%s%s %s%s %s%s %s%s %s%s" % tuple(call.number) }}</a> | {{ call.timestamp | timestamp_custom("%d/%m/%y %H:%M") }} | {{ call.type }} | {{ call.duration }}s |
+    | <ha-icon icon="mdi:phone-{{- call.type | replace('accepted', 'incoming') -}}"></ha-icon> | **{{ call.name }}** | <a href="tel:{{ call.number }}">{{ call.number }}</a> | {{ call.timestamp | timestamp_custom("%d/%m %Hh%M") }} | {{ call.duration }}s |
   {% endfor %}
 text_only: true
 card_mod:
@@ -211,16 +214,33 @@ card_mod:
       tr td:not(:first-child) {
         font-size: var(--ha-font-size-s);
       }
-      tr td:nth-child(2) {
+      tr td:nth-child(3) {
         font-family: digital;
         white-space: nowrap;
+      }
+      div {
+        overflow-y: scroll !important;
+        scrollbar-width: thin;
+        height: 180px;
       }
       table {
         width: 100%;
         background: var(--card-background-color);
-        display: block;
-        height: 180px;
-        overflow-y: scroll !important;
+      }
+      table > td {
+        white-space: nowrap;
+      }
+      ha-icon {
+        --mdc-icon-size: var(--ha-font-size-xl) !important;
+      }
+      ha-icon[icon="mdi:phone-missed"] {
+        color: var(--error-color);
+      }
+      ha-icon[icon="mdi:phone-incoming"] {
+        color: var(--warning-color);
+      }
+      ha-icon[icon="mdi:phone-outgoing"] {
+        color: var(--success-color);
       }
 ```
 
@@ -231,7 +251,7 @@ An animated tile card that appears when the phone rings (uses Tile Card + Card-M
 
 ```yaml
 type: tile
-entity: binary_sensor.freebox_caller_id_ringing
+entity: binary_sensor.area_freebox_phone_xxxxxx_ringing
 name: "Ringing: Incoming Call"
 state_content:
   - caller_name
