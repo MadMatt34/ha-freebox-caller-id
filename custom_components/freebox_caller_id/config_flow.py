@@ -133,29 +133,53 @@ class FreeboxCallerIDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
 
+
+import voluptuous as vol
+import homeassistant.helpers.config_validation as cv
+
+from .const import (
+    CONF_SCAN_INTERVAL,
+    CONF_RINGING_TIMEOUT,
+    DEFAULT_RINGING_TIMEOUT,
+    DOMAIN,
+)
+
 class FreeboxCallerIDOptionsFlow(config_entries.OptionsFlow):
     """Gère les options via le bouton Configurer de l'UI."""
 
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        self.config_entry = config_entry
+
     async def async_step_init(self, user_input=None):
-        """Gère le formulaire des options sous forme de champ numérique."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        current_interval = self.config_entry.options.get(
+        scan_interval = self.config_entry.options.get(
             CONF_SCAN_INTERVAL,
             self.config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         )
+        ringing_timeout = self.config_entry.options.get(
+            CONF_RINGING_TIMEOUT,
+            self.config_entry.data.get(CONF_RINGING_TIMEOUT, DEFAULT_RINGING_TIMEOUT)
+        )
 
-        return self.async_show_form(
-            step_id="init",
-            data_schema=vol.Schema({
-                vol.Required(CONF_SCAN_INTERVAL, default=current_interval): selector.NumberSelector(
+        options_schema = vol.Schema(
+            {
+                vol.Optional(CONF_SCAN_INTERVAL, default=scan_interval): selector.NumberSelector(
                     selector.NumberSelectorConfig(
                         min=1,
                         max=60,
                         step=1,
                         mode=selector.NumberSelectorMode.BOX,
-                    )
-                )
-            })
+                ),
+                vol.Optional(CONF_RINGING_TIMEOUT, default=ringing_timeout): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=1,
+                        max=60,
+                        step=1,
+                        mode=selector.NumberSelectorMode.BOX,
+                ),
+            }
         )
+
+        return self.async_show_form(step_id="init", data_schema=options_schema)
