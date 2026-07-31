@@ -65,6 +65,7 @@ L'installation se fait **100 % via l'interface graphique** de Home Assistant.
 
 ### Étape 1 : Ajout de l'intégration dans Home Assistant
 1. Dans Home Assistant, allez dans **Paramètres** > **Appareils et services**.
+[![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
 2. Cliquez sur **Ajouter une intégration** (en bas à droite).
 3. Recherchez **Freebox Caller ID** et sélectionnez-le.
 4. Laissez l'adresse IP / hôte par défaut (`mafreebox.freebox.fr`) et validez.
@@ -86,10 +87,13 @@ L'installation se fait **100 % via l'interface graphique** de Home Assistant.
 
 ## ⚙️ Modifier les options de configuration
 
-Vous pouvez ajuster l'intervalle de vérification à tout moment :
+Vous pouvez ajuster certains paramètres à tout moment :
 1. Allez dans **Paramètres** > **Appareils et services**.
 2. Sur la carte **Freebox Caller ID**, cliquez sur le bouton **Configurer**.
-3. Choisissez la fréquence de balayage (entre 1 et 60 secondes, 2s recommandé) et validez. L'intégration se rechargera automatiquement.
+3. Modifiez les paramètres :
+   - Intervalle de vérification : **Fréquence de scan** (entre 1 et 60 secondes, 2s recommandé et par défaut)
+   - Durée de sonnerie active : **Durée maximale de la sonnerie** (entre 1 et 180 secondes, 45s par défaut)
+5. Validez. L'intégration se rechargera automatiquement.
 
 ---
 
