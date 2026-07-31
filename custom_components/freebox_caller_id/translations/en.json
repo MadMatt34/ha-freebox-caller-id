@@ -1,0 +1,49 @@
+{
+  "entity": {
+    "sensor": {
+      "last_call": {
+        "name": "Last call"
+      }
+    },
+    "binary_sensor": {
+      "ringing": {
+        "name": "Ringing"
+      }
+    }
+  },
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Freebox",
+        "description": "Enter your Freebox address. If you haven't changed it, leave the default value.",
+        "data": {
+          "host": "Address (e.g., mafreebox.freebox.fr)"
+        }
+      },
+      "authorize": {
+        "title": "Freebox Authorization",
+        "description": "1. Go to your Freebox Server unit.\n2. Press the **right arrow** on the display to approve the access request (HA CallerID).\n3. Return here and click **Submit**.\n\n⚠️ Important: Once completed, go to Freebox OS > Settings > Access Management > Applications, and check **Access to call log** for HA CallerID."
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Freebox.",
+      "auth_failed": "Freebox rejected the pairing request.",
+      "pending_auth": "You have not yet approved the request on the Freebox display!",
+      "auth_denied": "Request denied or timed out."
+    },
+    "abort": {
+      "already_configured": "This Freebox is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Freebox Caller ID Options",
+        "description": "Adjust how frequently Home Assistant polls the Freebox.\nA polling interval that is too fast (e.g. 1s) responds quicker but may overload the box. 2 seconds is a good balance.",
+        "data": {
+          "scan_interval": "Scan interval (in seconds)"
+        }
+      }
+    }
+  }
+}
