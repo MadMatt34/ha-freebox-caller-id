@@ -35,13 +35,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     scan_interval = entry.options.get(
         CONF_SCAN_INTERVAL,
-        entry.data.get(CONF_SCAN_INTERVAL, 2)
+        entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    )
+    ringing_timeout = entry.options.get(
+        CONF_RINGING_TIMEOUT,
+        entry.data.get(CONF_RINGING_TIMEOUT, DEFAULT_RINGING_TIMEOUT)
     )
 
     session = async_get_clientsession(hass)
 
     coordinator = FreeboxCallerCoordinator(
-        hass, session, host, app_id, app_token, scan_interval
+        hass, session, host, app_id, app_token, scan_interval, ringing_timeout
     )
 
     await coordinator.async_config_entry_first_refresh()
@@ -68,11 +72,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
 
-
 class FreeboxCallerCoordinator(DataUpdateCoordinator):
     """Gestionnaire de mise à jour des données Freebox avec gestion d'erreurs avancée."""
 
-    def __init__(self, hass, session, host, app_id, app_token, scan_interval):
+    def __init__(self, hass, session, host, app_id, app_token, scan_interval, ringing_timeout):
         super().__init__(
             hass,
             _LOGGER,
@@ -88,6 +91,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
         self.system_info = {}
         self._last_notified_call_id = None
         self._consecutive_failures = 0
+        self.ringing_timeout = ringing_timeout
 
     async def _async_get_session(self) -> bool:
         """Obtient un nouveau token de session auprès de la Freebox."""
@@ -239,7 +243,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
             is_ringing = (
                 is_incoming
                 and duration == 0
-                and abs(now - call_time) < 60
+                and abs(now - call_time) < self.ringing_timeout
             )
 
             # 2. Déclenchement de l'événement UNIQUEMENT pour un NOUVEL appel ENTRANT
