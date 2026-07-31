@@ -67,7 +67,7 @@ Setup is performed **100% via the Home Assistant User Interface**.
 
 ### Step 1: Add the integration in Home Assistant
 1. In Home Assistant, go to **Settings** > **Devices & Services**.<br>
-   or click [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
+   [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
 2. Click **Add Integration** (bottom right).
 3. Search for **Freebox Caller ID** and select it.
 4. Leave the default IP/Host (`mafreebox.freebox.fr`) and validate.
