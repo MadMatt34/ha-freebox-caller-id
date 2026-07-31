@@ -41,7 +41,7 @@
         "title": "Freebox Caller ID Options",
         "description": "Adjust polling frequency and ringing timeout.\nA polling interval that is too fast (e.g. 1s) responds quicker but may overload the box. 2 seconds is a good balance.",
         "data": {
-          "scan_interval": "Scan interval (in seconds)"
+          "scan_interval": "Scan interval (in seconds)",
           "ringing_timeout": "Maximum ringing duration (in seconds)"
         }
       }
