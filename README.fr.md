@@ -24,38 +24,19 @@ Cette intégration effectue un scan HTTP rapide et asynchrone (polling toutes le
 
 ---
 
-## 🛠️ Structure des fichiers
-
-Dans votre dossier Home Assistant `/config/custom_components/freebox_caller_id/`, assurez-vous d'avoir l'arborescence suivante :
-
-```text
-config/
-└── custom_components/
-    └── freebox_caller_id/
-        ├── __init__.py
-        ├── binary_sensor.py
-        ├── config_flow.py
-        ├── const.py
-        ├── manifest.json
-        ├── sensor.py
-        └── translations/
-            └── fr.json
-```
-
----
-
 ## 🧩 Installation
 
 ### Option 1 : Installation via HACS (recommandée)
 1. Ouvrir **HACS**  
-2. Cliquer sur **Ajouter un dépôt personnalisé**  
+2. Cliquer sur les 3 points en haut à droite > **Dépôts personnalisés**.
 3. Ajouter : https://github.com/MadMatt34/ha-freebox-caller-id
-4. Choisir la catégorie **Intégration**  
-6. Redémarrer Home Assistant
+4. Choisir la catégorie **Intégration** et valider
+5. Cliquez sur **Télécharger**, puis redémarrer Home Assistant.
 
 ### Option 2 : Installation manuelle
-1. Copiez le dossier `freebox_caller_id` dans `/config/custom_components/`.
-2. Redémarrez Home Assistant pour faire détecter la nouvelle intégration.
+1. Téléchargez la dernière *Release* de ce dépôt.
+2. Copiez le dossier `freebox_caller_id` dans `/config/custom_components/`.
+3. Redémarrez Home Assistant pour faire détecter la nouvelle intégration.
 
 ---
 
@@ -66,9 +47,9 @@ L'installation se fait **100 % via l'interface graphique** de Home Assistant.
 ### Étape 1 : Ajout de l'intégration dans Home Assistant
 1. Dans Home Assistant, allez dans **Paramètres** > **Appareils et services**.<br>
    [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
-3. Cliquez sur **Ajouter une intégration** (en bas à droite).
-4. Recherchez **Freebox Caller ID** et sélectionnez-le.
-5. Laissez l'adresse IP / hôte par défaut (`mafreebox.freebox.fr`) et validez.
+2. Cliquez sur **Ajouter une intégration** (en bas à droite).
+3. Recherchez **Freebox Caller ID** et sélectionnez-le.
+4. Laissez l'adresse IP / hôte par défaut (`mafreebox.freebox.fr`) et validez.
 
 ### Étape 2 : Validation physique sur le Freebox Server
 1. L'assistant vous demande d'accorder l'autorisation.
@@ -88,8 +69,8 @@ L'installation se fait **100 % via l'interface graphique** de Home Assistant.
 ## ⚙️ Modifier les options de configuration
 
 Vous pouvez ajuster certains paramètres à tout moment :
-1. Allez dans **Paramètres** > **Appareils et services**.
-2. Sur la carte **Freebox Caller ID**, cliquez sur le bouton **Configurer**.
+1. Aller dans **Paramètres** > **Appareils et services** > **Freebox Caller ID**.
+2. Cliquer sur le bouton **Configurer** (roue crantée).
 3. Modifiez les paramètres :
    - Intervalle de vérification : **Fréquence de scan** (entre 1 et 60 secondes, 2s recommandé et par défaut)
    - Durée de sonnerie active : **Durée maximale de la sonnerie** (entre 1 et 180 secondes, 45s par défaut)
