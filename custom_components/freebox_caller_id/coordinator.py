@@ -20,6 +20,7 @@ from homeassistant.helpers.update_coordinator import (
 from .const import APP_ID, EVENT_INCOMING_CALL
 from .types import (
     CallType,
+    FreeboxCall,
     FreeboxCallLogResponse,
     FreeboxCallerData,
     FreeboxChallengeResult,
@@ -62,7 +63,15 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         self.base_scan_interval = scan_interval
         self.session_token: str | None = None
         self.system_info: FreeboxSystemInfo = {}
-        self._last_notified_call_id: int | None = None
+
+        # IDs des appels déjà observés.
+        #
+        # Ils sont initialisés avec le contenu du premier snapshot afin
+        # qu'un redémarrage de Home Assistant ne génère pas artificiellement
+        # un événement pour un appel déjà présent dans le journal.
+        self._seen_call_ids: set[int] = set()
+        self._calls_initialized = False
+
         self._consecutive_failures = 0
         self.ringing_timeout = ringing_timeout
 
@@ -213,6 +222,69 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                 seconds=self.base_scan_interval,
             )
 
+    def _update_seen_call_ids(
+        self,
+        calls: list[FreeboxCall],
+    ) -> set[int]:
+        """Met à jour les appels connus et retourne les nouveaux IDs."""
+        current_call_ids = {
+            call_id
+            for call in calls
+            if isinstance(call_id := call.get("id"), int)
+        }
+
+        if not self._calls_initialized:
+            self._seen_call_ids = current_call_ids
+            self._calls_initialized = True
+            return set()
+
+        new_call_ids = current_call_ids - self._seen_call_ids
+        self._seen_call_ids = current_call_ids
+
+        return new_call_ids
+
+    def _is_ringing(
+        self,
+        *,
+        call_type: CallType,
+        duration: int,
+        call_time: float,
+        now: float,
+    ) -> bool:
+        """Détermine si un appel entrant est actuellement en sonnerie."""
+        if call_type not in ("accepted", "missed"):
+            return False
+
+        # duration == 0 est volontairement conservé :
+        # c'est le comportement observé sur les Freebox pendant la sonnerie.
+        if duration != 0:
+            return False
+
+        age = now - call_time
+
+        return 0 <= age < self.ringing_timeout
+
+    def _fire_incoming_call_event(
+        self,
+        call_id: int,
+        call: FreeboxCall,
+        call_type: CallType,
+        call_time: float,
+    ) -> None:
+        """Émet l'événement pour un nouvel appel entrant."""
+        event_data: FreeboxIncomingCallEvent = {
+            "id": call_id,
+            "number": call.get("number"),
+            "name": call.get("name") or "Inconnu",
+            "type": call_type,
+            "datetime": call_time,
+        }
+
+        self.hass.bus.async_fire(
+            EVENT_INCOMING_CALL,
+            event_data,
+        )
+
     async def _async_update_data(self) -> FreeboxCallerData:
         """Récupère les dernières données de l'API Freebox."""
         timeout = aiohttp.ClientTimeout(total=5)
@@ -239,7 +311,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
                     if await self._async_get_session():
                         assert self.session_token is not None
-
                         headers["X-Fbx-App-Auth"] = self.session_token
 
                         await self._async_fetch_system_info(headers)
@@ -293,13 +364,19 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             call_time = last_call.get("datetime", time.time())
 
             if not isinstance(call_id, int):
-                self._handle_failure("Identifiant d'appel Freebox invalide")
+                self._handle_failure(
+                    "Identifiant d'appel Freebox invalide",
+                )
 
             if call_type not in ("accepted", "missed", "outgoing"):
-                self._handle_failure("Type d'appel Freebox invalide")
+                self._handle_failure(
+                    "Type d'appel Freebox invalide",
+                )
 
             if not isinstance(duration, int):
-                self._handle_failure("Durée d'appel Freebox invalide")
+                self._handle_failure(
+                    "Durée d'appel Freebox invalide",
+                )
 
             if not isinstance(call_time, (int, float)):
                 self._handle_failure(
@@ -307,41 +384,28 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                 )
 
             typed_call_type: CallType = call_type
-
-            # TODO: cette logique sera traitée dans une passe fonctionnelle.
-            is_incoming = (
-                typed_call_type in ("accepted", "missed")
-                or typed_call_type != "outgoing"
-            )
-
+            typed_call_time = float(call_time)
             now = time.time()
 
-            # TODO: cette logique sera traitée dans une passe fonctionnelle.
-            is_ringing = (
-                is_incoming
-                and duration == 0
-                and abs(now - call_time) < self.ringing_timeout
+            new_call_ids = self._update_seen_call_ids(last_10_calls)
+
+            if call_id in new_call_ids and typed_call_type in (
+                "accepted",
+                "missed",
+            ):
+                self._fire_incoming_call_event(
+                    call_id,
+                    last_call,
+                    typed_call_type,
+                    typed_call_time,
+                )
+
+            is_ringing = self._is_ringing(
+                call_type=typed_call_type,
+                duration=duration,
+                call_time=typed_call_time,
+                now=now,
             )
-
-            if self._last_notified_call_id is None:
-                self._last_notified_call_id = call_id
-
-            elif call_id != self._last_notified_call_id:
-                self._last_notified_call_id = call_id
-
-                if is_incoming:
-                    event_data: FreeboxIncomingCallEvent = {
-                        "id": call_id,
-                        "number": last_call.get("number"),
-                        "name": last_call.get("name") or "Inconnu",
-                        "type": typed_call_type,
-                        "datetime": call_time,
-                    }
-
-                    self.hass.bus.async_fire(
-                        EVENT_INCOMING_CALL,
-                        event_data,
-                    )
 
             formatted_calls: list[FreeboxRecentCall] = []
 
@@ -374,7 +438,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                         "name": call.get("name") or "Inconnu",
                         "type": formatted_call_type,
                         "duration": formatted_duration,
-                        "timestamp": formatted_timestamp,
+                        "timestamp": float(formatted_timestamp),
                     }
                 )
 
@@ -384,7 +448,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                 "caller_number": last_call.get("number"),
                 "call_type": typed_call_type,
                 "duration": duration,
-                "datetime": call_time,
+                "datetime": typed_call_time,
                 "id": call_id,
                 "recent_calls": formatted_calls,
                 "system": self.system_info,
