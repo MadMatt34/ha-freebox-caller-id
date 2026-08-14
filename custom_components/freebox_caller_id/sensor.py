@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from . import FreeboxConfigEntry
 from .coordinator import FreeboxCallerCoordinator
 from .entity import FreeboxCallerIDEntity
 from .types import FreeboxCallerData
@@ -17,12 +14,18 @@ from .types import FreeboxCallerData
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: FreeboxConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Configuration du sensor."""
-    coordinator: FreeboxCallerCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([FreeboxLastCallSensor(coordinator, entry)])
+    async_add_entities(
+        [
+            FreeboxLastCallSensor(
+                entry.runtime_data,
+                entry,
+            )
+        ]
+    )
 
 
 class FreeboxLastCallSensor(FreeboxCallerIDEntity, SensorEntity):
@@ -33,7 +36,7 @@ class FreeboxLastCallSensor(FreeboxCallerIDEntity, SensorEntity):
     def __init__(
         self,
         coordinator: FreeboxCallerCoordinator,
-        entry: ConfigEntry,
+        entry: FreeboxConfigEntry,
     ) -> None:
         """Initialise le capteur."""
         super().__init__(coordinator, entry)
@@ -41,7 +44,7 @@ class FreeboxLastCallSensor(FreeboxCallerIDEntity, SensorEntity):
 
     @property
     def native_value(self) -> str:
-        """Affiche le nom ou le numéro du tout dernier appelant en état principal."""
+        """Affiche le nom ou le numéro du tout dernier appelant."""
         data: FreeboxCallerData | None = self.coordinator.data
 
         if data:
@@ -57,8 +60,8 @@ class FreeboxLastCallSensor(FreeboxCallerIDEntity, SensorEntity):
         return "Aucun"
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Expose le dernier appel et l'historique des 10 derniers appels."""
+    def extra_state_attributes(self) -> dict[str, object]:
+        """Expose le dernier appel et l'historique."""
         data: FreeboxCallerData | None = self.coordinator.data
 
         if data:

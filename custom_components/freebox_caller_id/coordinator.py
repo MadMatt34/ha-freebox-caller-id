@@ -7,7 +7,7 @@ import hashlib
 import hmac
 import logging
 import time
-from typing import Any
+from typing import cast
 
 import aiohttp
 from homeassistant.core import HomeAssistant
@@ -17,13 +17,16 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 
-from .const import EVENT_INCOMING_CALL
+from .const import APP_ID, EVENT_INCOMING_CALL
 from .types import (
     CallType,
     FreeboxCallLogResponse,
     FreeboxCallerData,
+    FreeboxChallengeResult,
+    FreeboxIncomingCallEvent,
     FreeboxLoginResponse,
     FreeboxRecentCall,
+    FreeboxSessionResponse,
     FreeboxSystemInfo,
     FreeboxSystemResponse,
 )
@@ -31,7 +34,6 @@ from .types import (
 _LOGGER = logging.getLogger(__name__)
 
 MAX_BACKOFF_INTERVAL = 60
-APP_ID = "fr.ha.callerid"
 
 
 class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
@@ -42,7 +44,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         hass: HomeAssistant,
         session: HomeAssistantClientSession,
         host: str,
-        app_id: str,
         app_token: str,
         scan_interval: int,
         ringing_timeout: int,
@@ -56,7 +57,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         )
         self.session = session
         self.host = host
-        self.app_id = app_id
+        self.app_id = APP_ID
         self.app_token = app_token
         self.base_scan_interval = scan_interval
         self.session_token: str | None = None
@@ -77,16 +78,12 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                 if resp.status != 200:
                     return False
 
-                data: FreeboxLoginResponse = await resp.json()
-                result = data.get("result")
-
-                if not isinstance(result, dict):
-                    return False
-
-                challenge = result.get("challenge")
-
-                if not isinstance(challenge, str):
-                    return False
+                data = cast(
+                    FreeboxLoginResponse,
+                    await resp.json(),
+                )
+                result: FreeboxChallengeResult = data["result"]
+                challenge = result["challenge"]
 
             password = hmac.new(
                 self.app_token.encode(),
@@ -107,25 +104,18 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                 if resp.status != 200:
                     return False
 
-                data: FreeboxLoginResponse = await resp.json()
+                data = cast(
+                    FreeboxSessionResponse,
+                    await resp.json(),
+                )
 
-                if not data.get("success"):
+                if not data["success"]:
                     return False
 
-                result = data.get("result")
-
-                if not isinstance(result, dict):
-                    return False
-
-                session_token = result.get("session_token")
-
-                if not isinstance(session_token, str):
-                    return False
-
-                self.session_token = session_token
+                self.session_token = data["result"]["session_token"]
                 return True
 
-        except (aiohttp.ClientError, TimeoutError, Exception) as err:  # noqa: BLE001
+        except (aiohttp.ClientError, TimeoutError) as err:
             _LOGGER.debug(
                 "Échec de la demande de session Freebox : %s",
                 err,
@@ -150,17 +140,18 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                 timeout=timeout,
             ) as resp_sys:
                 if resp_sys.status == 200:
-                    sys_json: FreeboxSystemResponse = await resp_sys.json()
+                    sys_json = cast(
+                        FreeboxSystemResponse,
+                        await resp_sys.json(),
+                    )
 
-                    if sys_json.get("success"):
-                        result = sys_json.get("result")
+                    if sys_json["success"]:
+                        self.system_info = sys_json["result"]
 
-                        if isinstance(result, dict):
-                            self.system_info = result
-                            _LOGGER.debug(
-                                "Données système Freebox récupérées : %s",
-                                self.system_info,
-                            )
+                        _LOGGER.debug(
+                            "Données système Freebox récupérées : %s",
+                            self.system_info,
+                        )
                 else:
                     _LOGGER.warning(
                         "Impossible de récupérer /api/v4/system/ "
@@ -230,8 +221,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             if not self.session_token and not await self._async_get_session():
                 self._handle_failure("Impossible d'ouvrir une session")
 
-            # À ce stade, le token existe nécessairement sauf si
-            # _async_get_session() a échoué et a levé UpdateFailed.
             assert self.session_token is not None
 
             headers = {"X-Fbx-App-Auth": self.session_token}
@@ -250,6 +239,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
                     if await self._async_get_session():
                         assert self.session_token is not None
+
                         headers["X-Fbx-App-Auth"] = self.session_token
 
                         await self._async_fetch_system_info(headers)
@@ -264,7 +254,10 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                                     f"Erreur HTTP {resp2.status}",
                                 )
 
-                            data: FreeboxCallLogResponse = await resp2.json()
+                            data = cast(
+                                FreeboxCallLogResponse,
+                                await resp2.json(),
+                            )
                     else:
                         self._handle_failure(
                             "Échec du renouvellement de la session",
@@ -274,9 +267,12 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                     self._handle_failure(f"Erreur HTTP {resp.status}")
 
                 else:
-                    data = await resp.json()
+                    data = cast(
+                        FreeboxCallLogResponse,
+                        await resp.json(),
+                    )
 
-            if not data.get("success"):
+            if not data["success"]:
                 self._handle_failure("Réponse API invalide")
 
             self._handle_success()
@@ -296,8 +292,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             duration = last_call.get("duration", 0)
             call_time = last_call.get("datetime", time.time())
 
-            # Les valeurs par défaut de l'API sont validées avant
-            # utilisation afin de conserver un état fortement typé.
             if not isinstance(call_id, int):
                 self._handle_failure("Identifiant d'appel Freebox invalide")
 
@@ -314,12 +308,15 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
             typed_call_type: CallType = call_type
 
+            # TODO: cette logique sera traitée dans une passe fonctionnelle.
             is_incoming = (
                 typed_call_type in ("accepted", "missed")
                 or typed_call_type != "outgoing"
             )
 
             now = time.time()
+
+            # TODO: cette logique sera traitée dans une passe fonctionnelle.
             is_ringing = (
                 is_incoming
                 and duration == 0
@@ -333,7 +330,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                 self._last_notified_call_id = call_id
 
                 if is_incoming:
-                    event_data: dict[str, Any] = {
+                    event_data: FreeboxIncomingCallEvent = {
                         "id": call_id,
                         "number": last_call.get("number"),
                         "name": last_call.get("name") or "Inconnu",
@@ -399,7 +396,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         except UpdateFailed:
             raise
 
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             _LOGGER.exception(
                 "Erreur lors de la récupération des appels",
             )

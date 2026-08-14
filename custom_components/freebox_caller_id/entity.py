@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from typing import cast
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import FreeboxCallerCoordinator
+from . import FreeboxConfigEntry
 from .const import CONF_HOST, DOMAIN
-from .types import FreeboxCallerData, FreeboxSystemInfo
+from .coordinator import FreeboxCallerCoordinator
+from .types import FreeboxCallerData, FreeboxConfigData, FreeboxSystemInfo
 
 
 class FreeboxCallerIDEntity(
@@ -23,7 +23,7 @@ class FreeboxCallerIDEntity(
     def __init__(
         self,
         coordinator: FreeboxCallerCoordinator,
-        entry: ConfigEntry,
+        entry: FreeboxConfigEntry,
     ) -> None:
         """Initialise l'entité de base."""
         super().__init__(coordinator)
@@ -32,16 +32,14 @@ class FreeboxCallerIDEntity(
     @property
     def device_info(self) -> DeviceInfo:
         """Informations centralisées de l'appareil."""
-        host = cast(
-            str,
-            self._entry.data.get(CONF_HOST, "mafreebox.freebox.fr"),
+        config_data = cast(FreeboxConfigData, self._entry.data)
+
+        host = config_data.get(
+            CONF_HOST,
+            "mafreebox.freebox.fr",
         )
 
-        area = cast(
-            str,
-            self._entry.data.get("area", ""),
-        ).strip()
-
+        area = config_data.get("area", "").strip()
         short_id = self._entry.entry_id[:6]
 
         device_name = (
@@ -55,8 +53,11 @@ class FreeboxCallerIDEntity(
 
         data: FreeboxCallerData | None = self.coordinator.data
 
-        if data is not None:
-            system_data: FreeboxSystemInfo = data.get("system", {})
+        if data:
+            system_data: FreeboxSystemInfo = data.get(
+                "system",
+                {},
+            )
 
             firmware_ver = system_data.get("firmware_version")
 

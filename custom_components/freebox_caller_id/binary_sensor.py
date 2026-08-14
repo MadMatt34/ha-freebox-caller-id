@@ -2,17 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from . import FreeboxConfigEntry
 from .coordinator import FreeboxCallerCoordinator
 from .entity import FreeboxCallerIDEntity
 from .types import FreeboxCallerData
@@ -20,15 +17,24 @@ from .types import FreeboxCallerData
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: FreeboxConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Configuration du binary sensor."""
-    coordinator: FreeboxCallerCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([FreeboxRingingSensor(coordinator, entry)])
+    async_add_entities(
+        [
+            FreeboxRingingSensor(
+                entry.runtime_data,
+                entry,
+            )
+        ]
+    )
 
 
-class FreeboxRingingSensor(FreeboxCallerIDEntity, BinarySensorEntity):
+class FreeboxRingingSensor(
+    FreeboxCallerIDEntity,
+    BinarySensorEntity,
+):
     """Capteur binaire indiquant si le téléphone sonne."""
 
     _attr_translation_key = "ringing"
@@ -37,7 +43,7 @@ class FreeboxRingingSensor(FreeboxCallerIDEntity, BinarySensorEntity):
     def __init__(
         self,
         coordinator: FreeboxCallerCoordinator,
-        entry: ConfigEntry,
+        entry: FreeboxConfigEntry,
     ) -> None:
         """Initialise le capteur binaire."""
         super().__init__(coordinator, entry)
@@ -54,7 +60,7 @@ class FreeboxRingingSensor(FreeboxCallerIDEntity, BinarySensorEntity):
         return False
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any]:
+    def extra_state_attributes(self) -> dict[str, object]:
         """Attributs additionnels lors de la sonnerie."""
         data: FreeboxCallerData | None = self.coordinator.data
 

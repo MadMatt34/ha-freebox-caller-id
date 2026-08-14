@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, TypedDict
+from typing import Literal, NotRequired, TypedDict
 
 
 CallType = Literal["accepted", "missed", "outgoing"]
@@ -59,8 +59,18 @@ class FreeboxCallerData(TypedDict, total=False):
     system: FreeboxSystemInfo
 
 
-class FreeboxLoginResult(TypedDict):
-    """Résultat de l'authentification initiale Freebox."""
+class FreeboxIncomingCallEvent(TypedDict):
+    """Données de l'événement d'appel entrant."""
+
+    id: int
+    number: str | None
+    name: str
+    type: CallType
+    datetime: float
+
+
+class FreeboxChallengeResult(TypedDict):
+    """Résultat de la demande de challenge Freebox."""
 
     challenge: str
 
@@ -71,22 +81,76 @@ class FreeboxSessionResult(TypedDict):
     session_token: str
 
 
-class FreeboxLoginResponse(TypedDict, total=False):
-    """Réponse de l'API Freebox lors de l'authentification."""
+class FreeboxLoginResponse(TypedDict):
+    """Réponse Freebox pour la récupération du challenge."""
+
+    result: FreeboxChallengeResult
+
+
+class FreeboxSessionResponse(TypedDict):
+    """Réponse Freebox pour l'ouverture d'une session."""
 
     success: bool
-    result: FreeboxLoginResult | FreeboxSessionResult
+    result: FreeboxSessionResult
 
 
-class FreeboxSystemResponse(TypedDict, total=False):
+class FreeboxSystemResponse(TypedDict):
     """Réponse de l'API Freebox pour les informations système."""
 
     success: bool
     result: FreeboxSystemInfo
 
 
-class FreeboxCallLogResponse(TypedDict, total=False):
+class FreeboxCallLogResponse(TypedDict):
     """Réponse de l'API Freebox pour le journal d'appels."""
 
     success: bool
     result: list[FreeboxCall]
+
+
+class FreeboxConfigData(TypedDict, total=False):
+    """Données persistées dans la config entry."""
+
+    host: str
+    app_token: str
+    scan_interval: int
+    area: NotRequired[str]
+
+
+class FreeboxOptionsData(TypedDict, total=False):
+    """Options configurables de l'intégration."""
+
+    scan_interval: int
+    ringing_timeout: int
+
+
+class FreeboxUserInput(TypedDict):
+    """Données saisies lors de la première étape du config flow."""
+
+    host: str
+
+
+class FreeboxAuthorizeResult(TypedDict):
+    """Résultat de la demande d'autorisation Freebox."""
+
+    app_token: str
+    track_id: str
+
+
+class FreeboxAuthorizeResponse(TypedDict):
+    """Réponse de l'API Freebox pour une demande d'autorisation."""
+
+    success: bool
+    result: FreeboxAuthorizeResult
+
+
+class FreeboxAuthorizationStatusResult(TypedDict):
+    """Statut d'une demande d'autorisation."""
+
+    status: str
+
+
+class FreeboxAuthorizationStatusResponse(TypedDict):
+    """Réponse du statut d'autorisation Freebox."""
+
+    result: FreeboxAuthorizationStatusResult
