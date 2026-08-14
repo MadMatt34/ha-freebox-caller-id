@@ -170,7 +170,13 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                         response.status,
                     )
 
-        except Exception as err:
+        except (
+            aiohttp.ClientError,
+            TimeoutError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as err:
             _LOGGER.warning(
                 "Error retrieving Freebox system information: %s",
                 err,
