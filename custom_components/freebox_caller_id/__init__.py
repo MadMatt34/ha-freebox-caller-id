@@ -1,4 +1,4 @@
-"""Intégration Custom Freebox Caller ID pour Home Assistant."""
+"""Freebox Caller ID integration for Home Assistant."""
 
 from __future__ import annotations
 
@@ -17,7 +17,6 @@ from .const import (
 )
 from .coordinator import FreeboxCallerCoordinator
 
-
 type FreeboxConfigEntry = ConfigEntry[FreeboxCallerCoordinator]
 
 
@@ -25,7 +24,7 @@ async def async_setup_entry(
     hass: HomeAssistant,
     entry: FreeboxConfigEntry,
 ) -> bool:
-    """Initialisation du composant via l'interface UI."""
+    """Set up the Freebox Caller ID integration."""
     host = entry.data[CONF_HOST]
     app_token = entry.data[CONF_APP_TOKEN]
 
@@ -36,7 +35,6 @@ async def async_setup_entry(
             DEFAULT_SCAN_INTERVAL,
         ),
     )
-
     ringing_timeout = entry.options.get(
         CONF_RINGING_TIMEOUT,
         entry.data.get(
@@ -45,17 +43,18 @@ async def async_setup_entry(
         ),
     )
 
-    session = async_get_clientsession(hass)
-
     coordinator = FreeboxCallerCoordinator(
         hass=hass,
-        session=session,
+        session=async_get_clientsession(hass),
         host=host,
         app_token=app_token,
         scan_interval=scan_interval,
         ringing_timeout=ringing_timeout,
     )
 
+    # The first refresh intentionally uses Home Assistant's native
+    # ConfigEntryNotReady handling. If the Freebox is temporarily
+    # unavailable, HA will automatically retry the setup later.
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinator
@@ -76,7 +75,7 @@ async def async_reload_entry(
     hass: HomeAssistant,
     entry: FreeboxConfigEntry,
 ) -> None:
-    """Recharge l'intégration si les options sont modifiées."""
+    """Reload the integration after options have changed."""
     await hass.config_entries.async_reload(entry.entry_id)
 
 
@@ -84,7 +83,7 @@ async def async_unload_entry(
     hass: HomeAssistant,
     entry: FreeboxConfigEntry,
 ) -> bool:
-    """Désinstallation de l'intégration."""
+    """Unload the integration."""
     return await hass.config_entries.async_unload_platforms(
         entry,
         PLATFORMS,

@@ -7,7 +7,7 @@ import hmac
 import logging
 import time
 from datetime import timedelta
-from typing import cast
+from typing import NoReturn, cast
 
 import aiohttp
 from homeassistant.core import HomeAssistant
@@ -170,15 +170,16 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                         response.status,
                     )
 
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             _LOGGER.warning(
                 "Error retrieving Freebox system information: %s",
                 err,
             )
 
-    def _handle_failure(self, reason: str) -> None:
+    def _handle_failure(self, reason: str) -> NoReturn:
         """Handle a failed update with exponential backoff."""
         self._consecutive_failures += 1
+
         self.session_token = None
         self.system_info = {}
 
@@ -187,41 +188,19 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             self.base_scan_interval * (2**self._consecutive_failures),
         )
 
-        self.update_interval = timedelta(seconds=backoff_seconds)
-
-        if self._consecutive_failures == 1:
-            _LOGGER.warning(
-                "Lost connection to Freebox (%s). "
-                "Reconnection attempts in progress "
-                "(next attempt in %ds).",
-                reason,
-                backoff_seconds,
-            )
-        else:
-            _LOGGER.debug(
-                "Freebox still unavailable "
-                "(failure #%d: %s). Next attempt in %ds.",
-                self._consecutive_failures,
-                reason,
-                backoff_seconds,
-            )
-
-        raise UpdateFailed(f"Freebox unavailable: {reason}")
+        raise UpdateFailed(
+            f"Freebox unavailable: {reason}",
+            retry_after=backoff_seconds,
+        )
 
     def _handle_success(self) -> None:
-        """Restore normal polling after a successful update."""
+        """Handle a successful update."""
         if self._consecutive_failures > 0:
             _LOGGER.info(
-                "Connection to Freebox restored after %d failure(s). "
-                "Returning to normal polling interval (%ds).",
+                "Connection to Freebox restored after %d failure(s).",
                 self._consecutive_failures,
-                self.base_scan_interval,
             )
-
             self._consecutive_failures = 0
-            self.update_interval = timedelta(
-                seconds=self.base_scan_interval,
-            )
 
     @staticmethod
     def _is_incoming(call_type: CallType) -> bool:
