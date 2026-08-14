@@ -20,7 +20,6 @@ from homeassistant.helpers.update_coordinator import (
 from .const import EVENT_INCOMING_CALL
 from .types import (
     CallType,
-    FreeboxCall,
     FreeboxCallLogResponse,
     FreeboxCallerData,
     FreeboxLoginResponse,
@@ -400,7 +399,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         except UpdateFailed:
             raise
 
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             _LOGGER.exception(
                 "Erreur lors de la récupération des appels",
             )
