@@ -396,7 +396,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         except UpdateFailed:
             raise
 
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             _LOGGER.exception(
                 "Erreur lors de la récupération des appels",
             )

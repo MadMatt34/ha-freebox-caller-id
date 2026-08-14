@@ -13,7 +13,6 @@ from .const import (
     CONF_SCAN_INTERVAL,
     DEFAULT_RINGING_TIMEOUT,
     DEFAULT_SCAN_INTERVAL,
-    DOMAIN,
     PLATFORMS,
 )
 from .coordinator import FreeboxCallerCoordinator
