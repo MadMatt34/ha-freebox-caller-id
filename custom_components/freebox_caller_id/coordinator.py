@@ -7,33 +7,48 @@ import hashlib
 import hmac
 import logging
 import time
+from typing import Any
 
 import aiohttp
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import HomeAssistantClientSession
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
 )
 
 from .const import EVENT_INCOMING_CALL
+from .types import (
+    CallType,
+    FreeboxCall,
+    FreeboxCallLogResponse,
+    FreeboxCallerData,
+    FreeboxLoginResponse,
+    FreeboxRecentCall,
+    FreeboxSystemInfo,
+    FreeboxSystemResponse,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 MAX_BACKOFF_INTERVAL = 60
+APP_ID = "fr.ha.callerid"
 
 
-class FreeboxCallerCoordinator(DataUpdateCoordinator):
+class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
     """Gestionnaire de mise à jour des données Freebox."""
 
     def __init__(
         self,
-        hass,
-        session,
-        host,
-        app_id,
-        app_token,
-        scan_interval,
-        ringing_timeout,
-    ):
+        hass: HomeAssistant,
+        session: HomeAssistantClientSession,
+        host: str,
+        app_id: str,
+        app_token: str,
+        scan_interval: int,
+        ringing_timeout: int,
+    ) -> None:
+        """Initialise le coordinator."""
         super().__init__(
             hass,
             _LOGGER,
@@ -45,9 +60,9 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
         self.app_id = app_id
         self.app_token = app_token
         self.base_scan_interval = scan_interval
-        self.session_token = None
-        self.system_info = {}
-        self._last_notified_call_id = None
+        self.session_token: str | None = None
+        self.system_info: FreeboxSystemInfo = {}
+        self._last_notified_call_id: int | None = None
         self._consecutive_failures = 0
         self.ringing_timeout = ringing_timeout
 
@@ -63,8 +78,16 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 if resp.status != 200:
                     return False
 
-                data = await resp.json()
-                challenge = data["result"]["challenge"]
+                data: FreeboxLoginResponse = await resp.json()
+                result = data.get("result")
+
+                if not isinstance(result, dict):
+                    return False
+
+                challenge = result.get("challenge")
+
+                if not isinstance(challenge, str):
+                    return False
 
             password = hmac.new(
                 self.app_token.encode(),
@@ -85,11 +108,23 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 if resp.status != 200:
                     return False
 
-                data = await resp.json()
+                data: FreeboxLoginResponse = await resp.json()
 
-                if data.get("success"):
-                    self.session_token = data["result"]["session_token"]
-                    return True
+                if not data.get("success"):
+                    return False
+
+                result = data.get("result")
+
+                if not isinstance(result, dict):
+                    return False
+
+                session_token = result.get("session_token")
+
+                if not isinstance(session_token, str):
+                    return False
+
+                self.session_token = session_token
+                return True
 
         except (aiohttp.ClientError, TimeoutError, Exception) as err:  # noqa: BLE001
             _LOGGER.debug(
@@ -99,7 +134,10 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
 
         return False
 
-    async def _async_fetch_system_info(self, headers: dict) -> None:
+    async def _async_fetch_system_info(
+        self,
+        headers: dict[str, str],
+    ) -> None:
         """Récupère les informations système une seule fois."""
         if self.system_info:
             return
@@ -113,14 +151,17 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 timeout=timeout,
             ) as resp_sys:
                 if resp_sys.status == 200:
-                    sys_json = await resp_sys.json()
+                    sys_json: FreeboxSystemResponse = await resp_sys.json()
 
                     if sys_json.get("success"):
-                        self.system_info = sys_json.get("result", {})
-                        _LOGGER.debug(
-                            "Données système Freebox récupérées : %s",
-                            self.system_info,
-                        )
+                        result = sys_json.get("result")
+
+                        if isinstance(result, dict):
+                            self.system_info = result
+                            _LOGGER.debug(
+                                "Données système Freebox récupérées : %s",
+                                self.system_info,
+                            )
                 else:
                     _LOGGER.warning(
                         "Impossible de récupérer /api/v4/system/ "
@@ -135,7 +176,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 err,
             )
 
-    def _handle_failure(self, reason: str):
+    def _handle_failure(self, reason: str) -> None:
         """Calcule le backoff exponentiel et gère le niveau de log."""
         self._consecutive_failures += 1
         self.session_token = None
@@ -167,7 +208,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
 
         raise UpdateFailed(f"Freebox indisponible : {reason}")
 
-    def _handle_success(self):
+    def _handle_success(self) -> None:
         """Rétablit les paramètres normaux après un succès."""
         if self._consecutive_failures > 0:
             _LOGGER.info(
@@ -179,10 +220,10 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
 
             self._consecutive_failures = 0
             self.update_interval = timedelta(
-                seconds=self.base_scan_interval
+                seconds=self.base_scan_interval,
             )
 
-    async def _async_update_data(self):
+    async def _async_update_data(self) -> FreeboxCallerData:
         """Récupère les dernières données de l'API Freebox."""
         timeout = aiohttp.ClientTimeout(total=5)
 
@@ -190,12 +231,14 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
             if not self.session_token and not await self._async_get_session():
                 self._handle_failure("Impossible d'ouvrir une session")
 
+            # À ce stade, le token existe nécessairement sauf si
+            # _async_get_session() a échoué et a levé UpdateFailed.
+            assert self.session_token is not None
+
             headers = {"X-Fbx-App-Auth": self.session_token}
 
-            # Récupération unique des infos système si non encore chargées.
             await self._async_fetch_system_info(headers)
 
-            # Requête du journal d'appels.
             async with self.session.get(
                 f"http://{self.host}/api/v4/call/log/",
                 headers=headers,
@@ -207,7 +250,9 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                     )
 
                     if await self._async_get_session():
+                        assert self.session_token is not None
                         headers["X-Fbx-App-Auth"] = self.session_token
+
                         await self._async_fetch_system_info(headers)
 
                         async with self.session.get(
@@ -217,13 +262,13 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                         ) as resp2:
                             if resp2.status != 200:
                                 self._handle_failure(
-                                    f"Erreur HTTP {resp2.status}"
+                                    f"Erreur HTTP {resp2.status}",
                                 )
 
-                            data = await resp2.json()
+                            data: FreeboxCallLogResponse = await resp2.json()
                     else:
                         self._handle_failure(
-                            "Échec du renouvellement de la session"
+                            "Échec du renouvellement de la session",
                         )
 
                 elif resp.status != 200:
@@ -248,21 +293,33 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
             last_call = last_10_calls[0]
 
             call_id = last_call.get("id")
-            call_type = last_call.get(
-                "type"
-            )  # "accepted", "missed", ou "outgoing"
+            call_type = last_call.get("type")
             duration = last_call.get("duration", 0)
             call_time = last_call.get("datetime", time.time())
 
-            # Un appel entrant Freebox est identifié par un type
-            # "accepted" ou "missed" (pas "outgoing").
+            # Les valeurs par défaut de l'API sont validées avant
+            # utilisation afin de conserver un état fortement typé.
+            if not isinstance(call_id, int):
+                self._handle_failure("Identifiant d'appel Freebox invalide")
+
+            if call_type not in ("accepted", "missed", "outgoing"):
+                self._handle_failure("Type d'appel Freebox invalide")
+
+            if not isinstance(duration, int):
+                self._handle_failure("Durée d'appel Freebox invalide")
+
+            if not isinstance(call_time, (int, float)):
+                self._handle_failure(
+                    "Horodatage d'appel Freebox invalide",
+                )
+
+            typed_call_type: CallType = call_type
+
             is_incoming = (
-                call_type in ("accepted", "missed")
-                or call_type != "outgoing"
+                typed_call_type in ("accepted", "missed")
+                or typed_call_type != "outgoing"
             )
 
-            # La sonnerie s'active si c'est un appel entrant,
-            # non décroché (duration == 0) et récent.
             now = time.time()
             is_ringing = (
                 is_incoming
@@ -270,8 +327,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 and abs(now - call_time) < self.ringing_timeout
             )
 
-            # Déclenchement de l'événement UNIQUEMENT
-            # pour un NOUVEL appel ENTRANT.
             if self._last_notified_call_id is None:
                 self._last_notified_call_id = call_id
 
@@ -279,11 +334,11 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                 self._last_notified_call_id = call_id
 
                 if is_incoming:
-                    event_data = {
+                    event_data: dict[str, Any] = {
                         "id": call_id,
                         "number": last_call.get("number"),
                         "name": last_call.get("name") or "Inconnu",
-                        "type": call_type,
+                        "type": typed_call_type,
                         "datetime": call_time,
                     }
 
@@ -292,23 +347,46 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
                         event_data,
                     )
 
-            formatted_calls = [
-                {
-                    "id": call.get("id"),
-                    "number": call.get("number"),
-                    "name": call.get("name") or "Inconnu",
-                    "type": call.get("type"),
-                    "duration": call.get("duration", 0),
-                    "timestamp": call.get("datetime"),
-                }
-                for call in last_10_calls
-            ]
+            formatted_calls: list[FreeboxRecentCall] = []
+
+            for call in last_10_calls:
+                formatted_call_id = call.get("id")
+                formatted_call_type = call.get("type")
+                formatted_duration = call.get("duration", 0)
+                formatted_timestamp = call.get("datetime")
+
+                if not isinstance(formatted_call_id, int):
+                    continue
+
+                if formatted_call_type not in (
+                    "accepted",
+                    "missed",
+                    "outgoing",
+                ):
+                    continue
+
+                if not isinstance(formatted_duration, int):
+                    continue
+
+                if not isinstance(formatted_timestamp, (int, float)):
+                    continue
+
+                formatted_calls.append(
+                    {
+                        "id": formatted_call_id,
+                        "number": call.get("number"),
+                        "name": call.get("name") or "Inconnu",
+                        "type": formatted_call_type,
+                        "duration": formatted_duration,
+                        "timestamp": formatted_timestamp,
+                    }
+                )
 
             return {
                 "is_ringing": is_ringing,
                 "caller_name": last_call.get("name") or "Inconnu",
                 "caller_number": last_call.get("number"),
-                "call_type": call_type,
+                "call_type": typed_call_type,
                 "duration": duration,
                 "datetime": call_time,
                 "id": call_id,
@@ -322,8 +400,8 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator):
         except UpdateFailed:
             raise
 
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             _LOGGER.exception(
-                "Erreur lors de la récupération des appels"
+                "Erreur lors de la récupération des appels",
             )
             self._handle_failure(f"Erreur inattendue : {err}")

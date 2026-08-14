@@ -18,6 +18,12 @@ from .const import (
 )
 from .coordinator import FreeboxCallerCoordinator
 
+# Ré-export du coordinator pour conserver la compatibilité avec les
+# imports existants, notamment dans entity.py.
+__all__ = [
+    "FreeboxCallerCoordinator",
+]
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
