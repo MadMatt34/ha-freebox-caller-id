@@ -27,6 +27,7 @@ async def async_setup_entry(
     """Set up the Freebox Caller ID integration."""
     host = entry.data[CONF_HOST]
     app_token = entry.data[CONF_APP_TOKEN]
+    area = entry.data.get("area", "")
 
     scan_interval = entry.options.get(
         CONF_SCAN_INTERVAL,
@@ -48,6 +49,8 @@ async def async_setup_entry(
         session=async_get_clientsession(hass),
         host=host,
         app_token=app_token,
+        entry_id=entry.entry_id,
+        area=area,
         scan_interval=scan_interval,
         ringing_timeout=ringing_timeout,
     )

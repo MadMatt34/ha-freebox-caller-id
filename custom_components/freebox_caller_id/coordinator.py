@@ -12,12 +12,13 @@ from typing import NoReturn, cast
 import aiohttp
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import HomeAssistantClientSession
+from homeassistant.helpers.device_registry import DeviceInfo, async_get
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
 )
 
-from .const import APP_ID, EVENT_INCOMING_CALL
+from .const import APP_ID, DOMAIN, EVENT_INCOMING_CALL
 from .types import (
     CallType,
     FreeboxCall,
@@ -46,6 +47,8 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         session: HomeAssistantClientSession,
         host: str,
         app_token: str,
+        entry_id: str,
+        area: str,
         scan_interval: int,
         ringing_timeout: int,
     ) -> None:
@@ -61,12 +64,20 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         self.host = host
         self.app_id = APP_ID
         self.app_token = app_token
+        self.entry_id = entry_id
+        self.area = area.strip()
 
         self.base_scan_interval = scan_interval
         self.ringing_timeout = ringing_timeout
 
         self.session_token: str | None = None
         self.system_info: FreeboxSystemInfo = {}
+
+        self._device_info = self._create_default_device_info()
+        self._device_info_signature: tuple[str, str | None] = (
+            "Freebox Server",
+            None,
+        )
 
         # ID of the most recently observed call.
         #
@@ -76,6 +87,95 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         self._last_seen_call_id: int | None = None
 
         self._consecutive_failures = 0
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the cached device information."""
+        return self._device_info
+
+    def _create_default_device_info(self) -> DeviceInfo:
+        """Create the default device information."""
+        short_id = self.entry_id[:6]
+
+        device_name = (
+            f"{self.area} Freebox Phone ({short_id})"
+            if self.area
+            else f"Freebox Phone ({short_id})"
+        )
+
+        return DeviceInfo(
+            identifiers={(DOMAIN, self.entry_id)},
+            name=device_name,
+            manufacturer="Free",
+            model="Freebox Server",
+            configuration_url=f"http://{self.host}",
+            suggested_area=self.area or None,
+        )
+
+    def _update_device_info(self) -> None:
+        """Update the cached device information and device registry."""
+        firmware_version = self.system_info.get("firmware_version")
+
+        box_model: str | None = None
+        model_info = self.system_info.get("model_info")
+
+        if model_info:
+            if isinstance(model_info, str):
+                box_model = model_info
+            else:
+                box_model = (
+                    model_info.get("pretty_name")
+                    or model_info.get("name")
+                )
+
+        if not box_model:
+            box_model = self.system_info.get("board_name")
+
+        model = (
+            f"Freebox Server (modèle {box_model})"
+            if box_model
+            else "Freebox Server"
+        )
+
+        signature = (
+            model,
+            firmware_version,
+        )
+
+        if signature == self._device_info_signature:
+            return
+
+        short_id = self.entry_id[:6]
+
+        device_name = (
+            f"{self.area} Freebox Phone ({short_id})"
+            if self.area
+            else f"Freebox Phone ({short_id})"
+        )
+
+        self._device_info = DeviceInfo(
+            identifiers={(DOMAIN, self.entry_id)},
+            name=device_name,
+            manufacturer="Free",
+            model=model,
+            sw_version=firmware_version,
+            configuration_url=f"http://{self.host}",
+            suggested_area=self.area or None,
+        )
+        self._device_info_signature = signature
+
+        device_registry = async_get(self.hass)
+
+        device_registry.async_get_or_create(
+            config_entry_id=self.entry_id,
+            identifiers={(DOMAIN, self.entry_id)},
+            name=device_name,
+            manufacturer="Free",
+            model=model,
+            sw_version=firmware_version,
+            configuration_url=f"http://{self.host}",
+            suggested_area=self.area or None,
+        )
 
     async def _async_get_session(self) -> bool:
         """Obtain a new session token from the Freebox."""
@@ -158,6 +258,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
                     if data["success"]:
                         self.system_info = data["result"]
+                        self._update_device_info()
 
                         _LOGGER.debug(
                             "Freebox system information retrieved: %s",
