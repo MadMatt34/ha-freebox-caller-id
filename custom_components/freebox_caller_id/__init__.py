@@ -27,6 +27,7 @@ async def async_setup_entry(
     """Set up the Freebox Caller ID integration."""
     host = entry.data[CONF_HOST]
     app_token = entry.data[CONF_APP_TOKEN]
+
     area = entry.data.get("area", "")
 
     scan_interval = entry.options.get(
@@ -36,6 +37,7 @@ async def async_setup_entry(
             DEFAULT_SCAN_INTERVAL,
         ),
     )
+
     ringing_timeout = entry.options.get(
         CONF_RINGING_TIMEOUT,
         entry.data.get(
@@ -55,9 +57,7 @@ async def async_setup_entry(
         ringing_timeout=ringing_timeout,
     )
 
-    # The first refresh intentionally uses Home Assistant's native
-    # ConfigEntryNotReady handling. If the Freebox is temporarily
-    # unavailable, HA will automatically retry the setup later.
+    # Use Home Assistant's native ConfigEntryNotReady handling.
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinator

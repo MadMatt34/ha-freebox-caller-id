@@ -75,6 +75,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         self.system_info: FreeboxSystemInfo = {}
 
         self._device_info = self._create_default_device_info()
+
         self._device_info_signature: tuple[str, str | None] = (
             "Freebox Server",
             None,
@@ -96,17 +97,9 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
     def _create_default_device_info(self) -> DeviceInfo:
         """Create the default device information."""
-        short_id = self.entry_id[:6]
-
-        device_name = (
-            f"{self.area} Freebox Phone ({short_id})"
-            if self.area
-            else f"Freebox Phone ({short_id})"
-        )
-
         return DeviceInfo(
             identifiers={(DOMAIN, self.entry_id)},
-            name=device_name,
+            name="Freebox Phone",
             manufacturer="Free",
             model="Freebox Server",
             configuration_url=f"http://{self.host}",
@@ -146,23 +139,16 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         if signature == self._device_info_signature:
             return
 
-        short_id = self.entry_id[:6]
-
-        device_name = (
-            f"{self.area} Freebox Phone ({short_id})"
-            if self.area
-            else f"Freebox Phone ({short_id})"
-        )
-
         self._device_info = DeviceInfo(
             identifiers={(DOMAIN, self.entry_id)},
-            name=device_name,
+            name="Freebox Phone",
             manufacturer="Free",
             model=model,
             sw_version=firmware_version,
             configuration_url=f"http://{self.host}",
             suggested_area=self.area or None,
         )
+
         self._device_info_signature = signature
 
         device_registry = async_get(self.hass)
@@ -170,7 +156,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         device_registry.async_get_or_create(
             config_entry_id=self.entry_id,
             identifiers={(DOMAIN, self.entry_id)},
-            name=device_name,
+            name="Freebox Phone",
             manufacturer="Free",
             model=model,
             sw_version=firmware_version,
@@ -194,6 +180,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                     FreeboxLoginResponse,
                     await response.json(),
                 )
+
                 result: FreeboxChallengeResult = data["result"]
                 challenge = result["challenge"]
 
@@ -225,9 +212,13 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                     return False
 
                 self.session_token = data["result"]["session_token"]
+
                 return True
 
-        except (aiohttp.ClientError, TimeoutError) as err:
+        except (
+            aiohttp.ClientError,
+            TimeoutError,
+        ) as err:
             _LOGGER.debug(
                 "Failed to obtain Freebox session: %s",
                 err,
@@ -289,6 +280,11 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         self._consecutive_failures += 1
 
         self.session_token = None
+
+        # Clear the system data so the information is refreshed after
+        # the Freebox comes back online.
+        #
+        # The DeviceInfo cache itself is intentionally preserved.
         self.system_info = {}
 
         backoff_seconds = min(
@@ -363,7 +359,10 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         timeout = aiohttp.ClientTimeout(total=5)
 
         try:
-            if not self.session_token and not await self._async_get_session():
+            if (
+                not self.session_token
+                and not await self._async_get_session()
+            ):
                 self._handle_failure("Unable to open a session")
 
             assert self.session_token is not None
@@ -384,6 +383,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
                     if await self._async_get_session():
                         assert self.session_token is not None
+
                         headers["X-Fbx-App-Auth"] = self.session_token
 
                         await self._async_fetch_system_info(headers)
@@ -539,7 +539,10 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                 "system": self.system_info,
             }
 
-        except (aiohttp.ClientError, TimeoutError) as err:
+        except (
+            aiohttp.ClientError,
+            TimeoutError,
+        ) as err:
             self._handle_failure(
                 f"Network error / timeout: {err}",
             )
@@ -551,6 +554,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             _LOGGER.exception(
                 "Error while retrieving calls",
             )
+
             self._handle_failure(
                 f"Unexpected error: {err}",
             )

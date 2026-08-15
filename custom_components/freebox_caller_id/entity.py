@@ -23,7 +23,6 @@ class FreeboxCallerIDEntity(
     ) -> None:
         """Initialize the entity."""
         super().__init__(coordinator)
-
         self._entry = entry
 
     @property
