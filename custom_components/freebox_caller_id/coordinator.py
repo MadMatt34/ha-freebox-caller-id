@@ -10,8 +10,9 @@ from datetime import timedelta
 from typing import NoReturn, cast
 
 import aiohttp
+from aiohttp import ClientSession
+
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.aiohttp_client import HomeAssistantClientSession
 from homeassistant.helpers.device_registry import DeviceInfo, async_get
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
@@ -44,7 +45,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
     def __init__(
         self,
         hass: HomeAssistant,
-        session: HomeAssistantClientSession,
+        session: ClientSession,
         host: str,
         app_token: str,
         entry_id: str,
