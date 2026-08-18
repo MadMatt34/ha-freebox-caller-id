@@ -73,7 +73,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         self.system_info: FreeboxSystemInfo = {}
 
         self._device_info = self._create_default_device_info()
-
         self._device_info_signature: tuple[str, str | None] = (
             "Freebox Server",
             None,
@@ -366,6 +365,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
                     if await self._async_get_session():
                         assert self.session_token is not None
+
                         headers["X-Fbx-App-Auth"] = self.session_token
 
                         await self._async_fetch_system_info(headers)
@@ -407,14 +407,11 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
             calls_result = data.get("result", [])
 
-            # An empty call log is valid.
             if not calls_result:
                 return {
                     "system": self.system_info,
                 }
 
-            # The Freebox call log is ordered from the most recent call
-            # to the oldest one.
             last_call = calls_result[0]
 
             call_id = last_call.get("id")
@@ -448,13 +445,8 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
             typed_call_type: CallType = call_type
             typed_call_time = float(call_time)
-
             now = time.time()
 
-            # Detect only a new entry at the head of the call log.
-            #
-            # The first observed call initializes the reference and does
-            # not generate an event, because it may predate Home Assistant.
             if self._last_seen_call_id is None:
                 self._last_seen_call_id = call_id
 
@@ -537,7 +529,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             _LOGGER.exception(
                 "Error while retrieving calls",
             )
-
             self._handle_failure(
                 f"Unexpected error: {err}",
             )

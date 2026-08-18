@@ -18,7 +18,6 @@ from .const import (
     APP_NAME,
     APP_VERSION,
     CONF_APP_TOKEN,
-    CONF_AREA,
     CONF_HOST,
     CONF_RINGING_TIMEOUT,
     CONF_SCAN_INTERVAL,
@@ -50,14 +49,12 @@ class FreeboxCallerIDConfigFlow(
     VERSION = 1
 
     host: str | None
-    area: str | None
     app_token: str | None
     track_id: str | None
 
     def __init__(self) -> None:
         """Initialize the configuration flow."""
         self.host = None
-        self.area = None
         self.app_token = None
         self.track_id = None
 
@@ -86,7 +83,6 @@ class FreeboxCallerIDConfigFlow(
             )
 
             self.host = input_data[CONF_HOST].strip()
-            self.area = input_data[CONF_AREA]
 
             session = async_get_clientsession(self.hass)
 
@@ -178,9 +174,6 @@ class FreeboxCallerIDConfigFlow(
                         CONF_HOST,
                         default=self.host or DEFAULT_HOST,
                     ): str,
-                    vol.Required(
-                        CONF_AREA,
-                    ): selector.AreaSelector(),
                 }
             ),
             errors=errors,
@@ -239,13 +232,9 @@ class FreeboxCallerIDConfigFlow(
                 if self.unique_id is None:
                     return self.async_abort(reason="auth_failed")
 
-                if self.area is None:
-                    return self.async_abort(reason="auth_failed")
-
                 entry_data: FreeboxConfigData = {
                     CONF_HOST: self.host,
                     CONF_APP_TOKEN: self.app_token,
-                    CONF_AREA: self.area,
                     CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
                 }
 
