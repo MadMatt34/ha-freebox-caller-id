@@ -128,7 +128,7 @@ class FreeboxUserInput(TypedDict):
     """Données saisies lors de la première étape du config flow."""
 
     host: str
-
+    area: str
 
 class FreeboxAuthorizeResult(TypedDict):
     """Résultat de la demande d'autorisation Freebox."""

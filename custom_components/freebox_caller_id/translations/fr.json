@@ -17,7 +17,8 @@
         "title": "Connexion à la Freebox",
         "description": "Entrez l'adresse de votre Freebox. Si vous ne l'avez pas changée, laissez la valeur par défaut.",
         "data": {
-          "host": "Adresse (ex: mafreebox.freebox.fr)"
+          "host": "Adresse (ex: mafreebox.freebox.fr)",
+          "area": "Zone à utiliser (ex: Bureau)"
         }
       },
       "authorize": {

@@ -13,7 +13,7 @@ import aiohttp
 from aiohttp import ClientSession
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo, async_get
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
@@ -49,7 +49,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         host: str,
         app_token: str,
         entry_id: str,
-        area: str,
         scan_interval: int,
         ringing_timeout: int,
     ) -> None:
@@ -66,7 +65,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         self.app_id = APP_ID
         self.app_token = app_token
         self.entry_id = entry_id
-        self.area = area.strip()
 
         self.base_scan_interval = scan_interval
         self.ringing_timeout = ringing_timeout
@@ -103,11 +101,10 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             manufacturer="Free",
             model="Freebox Server",
             configuration_url=f"http://{self.host}",
-            suggested_area=self.area or None,
         )
 
     def _update_device_info(self) -> None:
-        """Update the cached device information and device registry."""
+        """Update the cached device information."""
         firmware_version = self.system_info.get("firmware_version")
 
         box_model: str | None = None
@@ -146,23 +143,9 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             model=model,
             sw_version=firmware_version,
             configuration_url=f"http://{self.host}",
-            suggested_area=self.area or None,
         )
 
         self._device_info_signature = signature
-
-        device_registry = async_get(self.hass)
-
-        device_registry.async_get_or_create(
-            config_entry_id=self.entry_id,
-            identifiers={(DOMAIN, self.entry_id)},
-            name="Freebox Phone",
-            manufacturer="Free",
-            model=model,
-            sw_version=firmware_version,
-            configuration_url=f"http://{self.host}",
-            suggested_area=self.area or None,
-        )
 
     async def _async_get_session(self) -> bool:
         """Obtain a new session token from the Freebox."""
@@ -355,7 +338,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         )
 
     async def _async_update_data(self) -> FreeboxCallerData:
-        """Fetch the latest data from the Freebox API."""
+        """Fetch the latest data from the Freebox."""
         timeout = aiohttp.ClientTimeout(total=5)
 
         try:
@@ -383,7 +366,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
                     if await self._async_get_session():
                         assert self.session_token is not None
-
                         headers["X-Fbx-App-Auth"] = self.session_token
 
                         await self._async_fetch_system_info(headers)
@@ -466,6 +448,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
             typed_call_type: CallType = call_type
             typed_call_time = float(call_time)
+
             now = time.time()
 
             # Detect only a new entry at the head of the call log.
