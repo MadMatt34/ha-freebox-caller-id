@@ -99,7 +99,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             name="Freebox Phone",
             manufacturer="Free",
             model="Freebox Server",
-            configuration_url=f"http://{self.host}",
+            configuration_url=f"https://{self.host}",
         )
 
     def _update_device_info(self) -> None:
