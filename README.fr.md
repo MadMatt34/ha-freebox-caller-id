@@ -3,6 +3,9 @@
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
 [![Latest Release](https://img.shields.io/github/v/release/MadMatt34/ha-freebox-caller-id?color=green)](https://github.com/MadMatt34/ha-freebox-caller-id/releases)
 
+[![HACS Check](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hacs.yml)
+[![Hassfest Check](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hassfest.yml)
+
 ![Freebox Caller ID for Home Assistant](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/logo.png)
 
 [🏴󠁧󠁢󠁥󠁮󠁧󠁿 README in ENGLISH 🏴󠁧󠁢󠁥󠁮󠁧󠁿](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/README.md)
@@ -11,11 +14,12 @@
 
 ---
 
-## 📌 Objectif
+## ⚡ Fonctionnalités principales
 
-Par défaut, l'[API Freebox OS](https://dev.freebox.fr/sdk/os/) n'émet aucun push lorsqu'un téléphone sonne. Cependant, la Freebox inscrit immédiatement l'appel entrant dans son registre (`/api/v4/call/log/`) dès la première sonnerie avec une durée égale à `0`. 
+Par défaut, l'[API Freebox OS](https://dev.freebox.fr/sdk/os/) n'émet aucun push lorsqu'un téléphone sonne. Cependant, la Freebox inscrit immédiatement l'appel entrant dans son registre (`/api/v4/call/log/`) dès la première sonnerie avec une durée égale à `0`.
 
 Cette intégration effectue un scan HTTP rapide et asynchrone (polling toutes les 2 secondes par défaut) pour :
+
 - Déclencher un **événement natif** (`freebox_incoming_call`) dès le premier signal de sonnerie.
 - Activer un **capteur binaire** (`binary_sensor.piece_freebox_phone_xxxxxx_sonnerie`) pendant toute la durée où le téléphone sonne, avec les informations de l'appelant.
 - Conserver les données de l'appelant dans un **capteur dédié** (`sensor.piece_freebox_phone_xxxxxx_dernier_appel`), et l'historique des 10 derniers appels.
@@ -26,14 +30,16 @@ Cette intégration effectue un scan HTTP rapide et asynchrone (polling toutes le
 
 ## 🧩 Installation
 
-### Option 1 : Installation via HACS (recommandée)
+### Option 1 : Installation via HACS (dépôt personnalisé - 📌 recommandée)
+
 1. Ouvrir **HACS**  
 2. Cliquer sur les 3 points en haut à droite > **Dépôts personnalisés**.
-3. Ajouter : https://github.com/MadMatt34/ha-freebox-caller-id
+3. Ajouter : `https://github.com/MadMatt34/ha-freebox-caller-id`
 4. Choisir la catégorie **Intégration** et valider
 5. Cliquez sur **Télécharger**, puis redémarrer Home Assistant.
 
 ### Option 2 : Installation manuelle
+
 1. Téléchargez la dernière *Release* de ce dépôt.
 2. Copiez le dossier `freebox_caller_id` dans `/config/custom_components/`.
 3. Redémarrez Home Assistant pour faire détecter la nouvelle intégration.
@@ -45,19 +51,22 @@ Cette intégration effectue un scan HTTP rapide et asynchrone (polling toutes le
 L'installation se fait **100 % via l'interface graphique** de Home Assistant.
 
 ### Étape 1 : Ajout de l'intégration dans Home Assistant
-1. Dans Home Assistant, allez dans **Paramètres** > **Appareils et services**.<br>
+
+1. Dans Home Assistant, allez dans **Paramètres** > **Appareils et services**.\
    [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
 2. Cliquez sur **Ajouter une intégration** (en bas à droite).
 3. Recherchez **Freebox Caller ID** et sélectionnez-le.
 4. Laissez l'adresse IP / hôte par défaut (`mafreebox.freebox.fr`) et validez.
 
 ### Étape 2 : Validation physique sur le Freebox Server
+
 1. L'assistant vous demande d'accorder l'autorisation.
 2. Rendez-vous devant votre boîtier **Freebox Server** (physiquement).
 3. Appuyez sur la **flèche de droite** (ou la touche de validation) sur l'écran tactile du boîtier pour accepter la demande **HA CallerID**.
 4. Revenez sur Home Assistant et cliquez sur **Soumettre**.
 
 ### Étape 3 : Autorisation dans l'interface Freebox OS
+
 1. Connectez-vous sur votre espace Freebox OS : [http://mafreebox.freebox.fr](http://mafreebox.freebox.fr).
 2. Allez dans **Paramètres de la Freebox** > **Gestion des accès** > Onglet **Applications**.
 3. Cliquez sur la ligne **HA CallerID**.
@@ -66,24 +75,27 @@ L'installation se fait **100 % via l'interface graphique** de Home Assistant.
 
 ---
 
-## ⚙️ Modifier les options de configuration
+## ⚙️ Modification des paramètres
 
 Vous pouvez ajuster certains paramètres à tout moment :
+
 1. Aller dans **Paramètres** > **Appareils et services** > **Freebox Caller ID**.
 2. Cliquer sur le bouton **Configurer** (roue crantée).
 3. Modifiez les paramètres :
    - Intervalle de vérification : **Fréquence de scan** (entre 1 et 60 secondes, 2s recommandé et par défaut)
    - Durée de sonnerie active : **Durée maximale de la sonnerie** (entre 1 et 180 secondes, 45s par défaut)
-5. Validez. L'intégration se rechargera automatiquement.
+4. Validez. L'intégration se rechargera automatiquement.
 
 ---
 
 ## 📡 Événements et Entités créés
 
 ### 1. Événement Home Assistant : `freebox_incoming_call`
+
 Émis instantanément à l'arrivée de la première sonnerie d'un nouvel appel.
 
 **Données transmises dans `trigger.event.data` :**
+
 - `id` : Identifiant unique de l'appel Freebox.
 - `number` : Numéro de téléphone de l'appelant.
 - `name` : Nom de l'appelant (s'il est présent dans le répertoire Freebox) ou `"Inconnu"`.
@@ -93,10 +105,11 @@ Vous pouvez ajuster certains paramètres à tout moment :
 ---
 
 ### 2. Capteur binaire : `binary_sensor.piece_freebox_phone_xxxxxx_sonnerie`
+
 - **Device Class** : `sound`
 - **État** :
-    - `on` : Pendant que le téléphone sonne.
-    - `off` : Quand décroché ou après un délai d'attente maximum de 45s.
+  - `on` : Pendant que le téléphone sonne.
+  - `off` : Quand décroché ou après un délai d'attente maximum de 45s.
 - **Attributs enrichis :**
   - `caller_name` : Nom du correspondant.
   - `caller_number` : Numéro de téléphone.
@@ -106,6 +119,7 @@ Vous pouvez ajuster certains paramètres à tout moment :
 ---
 
 ### 3. Capteur : `sensor.piece_freebox_phone_xxxxxx_dernier_appel`
+
 - **État** : Nom ou numéro du dernier appelant enregistré.
 - **Attributs enrichis :** Liste des 10 derniers appels avec les informations suivantes
   - `number` : Numéro du correspondant.
@@ -119,6 +133,7 @@ Vous pouvez ajuster certains paramètres à tout moment :
 ## 🤖 Exemples d'automatisations et dashboards
 
 ### Exemple 1 : Notification mobile et annonce vocale TTS
+
 Déclenchement instantané à la réception d'un appel :
 
 ```yaml
@@ -146,6 +161,7 @@ action:
 ---
 
 ### Exemple 2 : Pause multimédia automatique et reprise après la sonnerie
+
 Met en pause le lecteur multimédia pendant toute la durée de la sonnerie et reprend la lecture une fois l'appel décroché ou abandonné :
 
 ```yaml
@@ -176,6 +192,7 @@ action:
 ---
 
 ### Exemple 3 : Affichage des derniers appels
+
 Une belle carte d'historique sur votre tableau de bord Home Assistant en utilisant une carte Markdown + Card-Mod :
 
 ```yaml
@@ -230,6 +247,7 @@ card_mod:
 ---
 
 ### Exemple 4 : Affichage d'un appel entrant
+
 Une belle carte pour apporter un visuel quand le téléphone sonne en utilisant une carte Tuile + Card-Mod :
 
 ```yaml
@@ -266,6 +284,7 @@ visibility:
 ## 🛡️ Gestion des Erreurs
 
 En cas de redémarrage de la Freebox ou de mise à jour du firmware :
+
 - Un avertissement unique est inscrit dans les journaux de Home Assistant lors de la perte de communication.
 - L'intégration bascule en mode **Backoff Exponentiel** (`2s -> 4s -> 8s -> 16s -> 32s -> 60s`).
 - Dès le retour en ligne de la Freebox, la session est automatiquement ré-authentifiée et l'intervalle de balayage d'origine est rétabli, sans nécessiter de redémarrage de Home Assistant.
@@ -282,4 +301,5 @@ En cas de redémarrage de la Freebox ou de mise à jour du firmware :
 ---
 
 ### CREDITS
+
 *Inspiré de [https://github.com/jystervinou/freebox-caller-id](https://github.com/jystervinou/freebox-caller-id) et largement fait avec l'IA*

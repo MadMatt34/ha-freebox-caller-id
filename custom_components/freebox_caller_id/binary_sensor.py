@@ -1,56 +1,75 @@
-"""Support du capteur binaire pour la sonnerie Freebox."""
-from __future__ import annotations
+"""Binary sensor for the Freebox phone ringing state."""
 
-from typing import Any
+from __future__ import annotations
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from . import FreeboxConfigEntry
+from .coordinator import FreeboxCallerCoordinator
 from .entity import FreeboxCallerIDEntity
+from .types import FreeboxCallerData
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: FreeboxConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Configuration du binary sensor."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([FreeboxRingingSensor(coordinator, entry)])
+    """Set up the ringing binary sensor."""
+    async_add_entities(
+        [
+            FreeboxRingingSensor(
+                entry.runtime_data,
+                entry,
+            )
+        ]
+    )
 
 
-class FreeboxRingingSensor(FreeboxCallerIDEntity, BinarySensorEntity):
-    """Capteur binaire indiquant si le téléphone sonne."""
+class FreeboxRingingSensor(
+    FreeboxCallerIDEntity,
+    BinarySensorEntity,
+):
+    """Binary sensor indicating whether the phone is ringing."""
 
     _attr_translation_key = "ringing"
     _attr_device_class = BinarySensorDeviceClass.SOUND
 
-    def __init__(self, coordinator, entry) -> None:
-        """Initialise le capteur binaire."""
-        super().__init__(coordinator, entry)
+    def __init__(
+        self,
+        coordinator: FreeboxCallerCoordinator,
+        entry: FreeboxConfigEntry,
+    ) -> None:
+        """Initialize the binary sensor."""
+        super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_ringing"
 
     @property
     def is_on(self) -> bool:
-        """Retourne True si le téléphone est en train de sonner."""
-        if self.coordinator.data and isinstance(self.coordinator.data, dict):
-            return self.coordinator.data.get("is_ringing", False)
+        """Return whether the phone is currently ringing."""
+        data: FreeboxCallerData | None = self.coordinator.data
+
+        if data:
+            return data.get("is_ringing", False)
+
         return False
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Attributs additionnels lors de la sonnerie."""
-        if self.coordinator.data and self.is_on:
+    def extra_state_attributes(self) -> dict[str, object]:
+        """Return additional attributes while ringing."""
+        data: FreeboxCallerData | None = self.coordinator.data
+
+        if data and self.is_on:
             return {
-                "caller_name": self.coordinator.data.get("caller_name"),
-                "caller_number": self.coordinator.data.get("caller_number"),
-                "call_type": self.coordinator.data.get("call_type"),
-                "datetime": self.coordinator.data.get("datetime"),
+                "caller_name": data.get("caller_name"),
+                "caller_number": data.get("caller_number"),
+                "call_type": data.get("call_type"),
+                "datetime": data.get("datetime"),
             }
+
         return {}

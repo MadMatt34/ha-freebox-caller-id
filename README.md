@@ -3,6 +3,9 @@
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
 [![Latest Release](https://img.shields.io/github/v/release/MadMatt34/ha-freebox-caller-id?color=green)](https://github.com/MadMatt34/ha-freebox-caller-id/releases)
 
+[![HACS Check](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hacs.yml)
+[![Hassfest Check](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hassfest.yml)
+
 ![Freebox Caller ID for Home Assistant](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/logo.png)
 
 [🇫🇷 README en FRANCAIS 🇫🇷](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/README.fr.md)
@@ -11,11 +14,12 @@
 
 ---
 
-## 📌 Goal
+## ⚡ Main Features
 
 By default, the [Freebox OS API](https://dev.freebox.fr/sdk/os/) does not send push notifications when a phone rings. However, the Freebox immediately registers incoming calls in its call log (`/api/v4/call/log/`) upon the very first ring with a duration of `0`.
 
 This integration performs fast, asynchronous HTTP polling (every 2 seconds by default) to:
+
 - Fire a **native event** (`freebox_incoming_call`) on the first ring signal.
 - Turn on a **binary sensor** (`binary_sensor.area_freebox_phone_xxxxxx_ringing`) while the phone is ringing, enriched with caller information.
 - Store the caller's details in a **dedicated sensor** (`sensor.area_freebox_phone_xxxxxx_last_call`), alongside a history of the last 10 calls.
@@ -24,30 +28,10 @@ This integration performs fast, asynchronous HTTP polling (every 2 seconds by de
 
 ---
 
-## 🛠️ File Structure
-
-In your Home Assistant `/config/custom_components/freebox_caller_id/` directory, ensure you have the following file layout:
-
-```text
-config/
-└── custom_components/
-    └── freebox_caller_id/
-        ├── __init__.py
-        ├── binary_sensor.py
-        ├── config_flow.py
-        ├── const.py
-        ├── manifest.json
-        ├── sensor.py
-        └── translations/
-            ├── en.json
-            └── fr.json
-```
-
----
-
 ## 🧩 Installation
 
-### Option 1: HACS Installation (Recommended)
+### Option 1: HACS Installation (Custom Repository - 📌 Recommended)
+
 1. Open **HACS** in Home Assistant.
 2. Click **Custom Repositories** (top right menu).
 3. Add: `https://github.com/MadMatt34/ha-freebox-caller-id`
@@ -56,6 +40,7 @@ config/
 6. Restart Home Assistant.
 
 ### Option 2: Manual Installation
+
 1. Copy the `freebox_caller_id` folder into your `/config/custom_components/` directory.
 2. Restart Home Assistant to detect the new integration.
 
@@ -66,19 +51,22 @@ config/
 Setup is performed **100% via the Home Assistant User Interface**.
 
 ### Step 1: Add the integration in Home Assistant
-1. In Home Assistant, go to **Settings** > **Devices & Services**.<br>
+
+1. In Home Assistant, go to **Settings** > **Devices & Services**.\
    [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
 2. Click **Add Integration** (bottom right).
 3. Search for **Freebox Caller ID** and select it.
 4. Leave the default IP/Host (`mafreebox.freebox.fr`) and validate.
 
 ### Step 2: Physical approval on the Freebox Server
+
 1. The setup wizard will prompt you for physical authorization.
 2. Walk to your physical **Freebox Server** box.
 3. Press the **Right Arrow** (or validation button) on the touch screen to accept the **HA CallerID** request.
 4. Return to Home Assistant and click **Submit**.
 
 ### Step 3: Grant permissions in Freebox OS
+
 1. Log in to your Freebox OS web interface: [http://mafreebox.freebox.fr](http://mafreebox.freebox.fr).
 2. Go to **Freebox Settings** > **Access Management** > **Applications** tab.
 3. Click on **HA CallerID**.
@@ -87,9 +75,10 @@ Setup is performed **100% via the Home Assistant User Interface**.
 
 ---
 
-## ⚙️ Configuration Options
+## ⚙️ Modifying Settings
 
 You can adjust some settings at any time:
+
 1. Go to **Settings** > **Devices & Services**.
 2. On the **Freebox Caller ID** card, click **Configure**.
 3. Change the settings:
@@ -102,9 +91,11 @@ You can adjust some settings at any time:
 ## 📡 Events and Entities
 
 ### 1. Home Assistant Event: `freebox_incoming_call`
+
 Fired instantaneously as soon as a new incoming call starts ringing.
 
 **Event payload in `trigger.event.data`:**
+
 - `id`: Unique identifier for the Freebox call.
 - `number`: Caller's phone number.
 - `name`: Caller's name (if saved in the Freebox phonebook) or `"Unknown"`.
@@ -114,10 +105,11 @@ Fired instantaneously as soon as a new incoming call starts ringing.
 ---
 
 ### 2. Binary Sensor: `binary_sensor.area_freebox_phone_xxxxxx_ringing`
+
 - **Device Class**: `sound`
 - **State**:
-    - `on`: While the phone is ringing.
-    - `off`: When answered or after a maximum timeout of 45 seconds.
+  - `on`: While the phone is ringing.
+  - `off`: When answered or after a maximum timeout of 45 seconds.
 - **Attributes:**
   - `caller_name`: Name of the caller.
   - `caller_number`: Phone number.
@@ -127,6 +119,7 @@ Fired instantaneously as soon as a new incoming call starts ringing.
 ---
 
 ### 3. Sensor: `sensor.area_freebox_phone_xxxxxx_last_call`
+
 - **State**: Name or phone number of the last recorded caller.
 - **Attributes:** List of the last 10 calls with the following details:
   - `number`: Phone number.
@@ -140,6 +133,7 @@ Fired instantaneously as soon as a new incoming call starts ringing.
 ## 🤖 Automations and Dashboard Examples
 
 ### Example 1: Mobile Notification and Voice TTS Announcement
+
 Triggers instantly when an incoming call arrives:
 
 ```yaml
@@ -167,6 +161,7 @@ action:
 ---
 
 ### Example 2: Automatic Media Pause and Resume on Ringing
+
 Pauses media playback while the phone is ringing and resumes playing once answered or stopped:
 
 ```yaml
@@ -197,6 +192,7 @@ action:
 ---
 
 ### Example 3: Recent Call History Dashboard Card
+
 A call history table for your Home Assistant dashboard using Markdown + Card-Mod:
 
 ```yaml
@@ -251,6 +247,7 @@ card_mod:
 ---
 
 ### Example 4: Animated Incoming Call Card
+
 An animated tile card that appears when the phone rings (uses Tile Card + Card-Mod):
 
 ```yaml
@@ -287,6 +284,7 @@ visibility:
 ## 🛡️ Error Handling
 
 If your Freebox reboots or undergoes a firmware update:
+
 - A single warning log is logged in Home Assistant when communication is lost.
 - The integration enters **Exponential Backoff** mode (`2s -> 4s -> 8s -> 16s -> 32s -> 60s`).
 - Once the Freebox comes back online, the session automatically re-authenticates and restores the original polling interval without requiring a Home Assistant restart.
@@ -303,4 +301,5 @@ If your Freebox reboots or undergoes a firmware update:
 ---
 
 ### CREDITS
+
 *Inspired by [https://github.com/jystervinou/freebox-caller-id](https://github.com/jystervinou/freebox-caller-id) and largely built with AI support.*

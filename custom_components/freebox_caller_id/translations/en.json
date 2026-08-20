@@ -17,7 +17,8 @@
         "title": "Connect to Freebox",
         "description": "Enter your Freebox address. If you haven't changed it, leave the default value.",
         "data": {
-          "host": "Address (e.g., mafreebox.freebox.fr)"
+          "host": "Address (e.g., mafreebox.freebox.fr)",
+          "area": "Area to use (e.g., office)"
         }
       },
       "authorize": {
