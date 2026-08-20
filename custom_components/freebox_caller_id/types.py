@@ -1,4 +1,4 @@
-"""Types utilisés par l'intégration Freebox Caller ID."""
+"""Types for the Freebox Caller ID integration."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ CallType = Literal["accepted", "missed", "outgoing"]
 
 
 class FreeboxCall(TypedDict, total=False):
-    """Appel tel que retourné par l'API Freebox."""
+    """Call as returned by the Freebox API."""
 
     id: int
     number: str | None
@@ -20,7 +20,7 @@ class FreeboxCall(TypedDict, total=False):
 
 
 class FreeboxRecentCall(TypedDict):
-    """Appel formaté pour l'historique exposé par l'intégration."""
+    """Call formatted for the recent calls exposed by the integration."""
 
     id: int
     number: str | None
@@ -31,14 +31,14 @@ class FreeboxRecentCall(TypedDict):
 
 
 class FreeboxModelInfo(TypedDict, total=False):
-    """Informations sur le modèle de la Freebox."""
+    """Freebox model information."""
 
     pretty_name: str
     name: str
 
 
 class FreeboxSystemInfo(TypedDict, total=False):
-    """Informations système retournées par la Freebox."""
+    """System information returned by the Freebox."""
 
     firmware_version: str
     model_info: FreeboxModelInfo | str
@@ -46,7 +46,7 @@ class FreeboxSystemInfo(TypedDict, total=False):
 
 
 class FreeboxCallerData(TypedDict, total=False):
-    """Données exposées par le coordinator."""
+    """Data exposed by the coordinator."""
 
     is_ringing: bool
     caller_name: str
@@ -60,7 +60,7 @@ class FreeboxCallerData(TypedDict, total=False):
 
 
 class FreeboxIncomingCallEvent(TypedDict):
-    """Données de l'événement d'appel entrant."""
+    """Incoming call event data."""
 
     id: int
     number: str | None
@@ -70,87 +70,86 @@ class FreeboxIncomingCallEvent(TypedDict):
 
 
 class FreeboxChallengeResult(TypedDict):
-    """Résultat de la demande de challenge Freebox."""
+    """Result of the Freebox challenge request."""
 
     challenge: str
 
 
 class FreeboxSessionResult(TypedDict):
-    """Résultat de l'ouverture d'une session Freebox."""
+    """Result of opening a Freebox session."""
 
     session_token: str
 
 
 class FreeboxLoginResponse(TypedDict):
-    """Réponse Freebox pour la récupération du challenge."""
+    """Freebox response for challenge retrieval."""
 
     result: FreeboxChallengeResult
 
 
 class FreeboxSessionResponse(TypedDict):
-    """Réponse Freebox pour l'ouverture d'une session."""
+    """Freebox response for opening a session."""
 
     success: bool
     result: FreeboxSessionResult
 
 
 class FreeboxSystemResponse(TypedDict):
-    """Réponse de l'API Freebox pour les informations système."""
+    """Freebox response for system information."""
 
     success: bool
     result: FreeboxSystemInfo
 
 
 class FreeboxCallLogResponse(TypedDict):
-    """Réponse de l'API Freebox pour le journal d'appels."""
+    """Freebox response for the call log."""
 
     success: bool
     result: list[FreeboxCall]
 
 
 class FreeboxConfigData(TypedDict, total=False):
-    """Données persistées dans la config entry."""
+    """Data persisted in the config entry."""
 
     host: str
     app_token: str
     scan_interval: int
-    area: NotRequired[str]
 
 
 class FreeboxOptionsData(TypedDict, total=False):
-    """Options configurables de l'intégration."""
+    """Configurable integration options."""
 
     scan_interval: int
     ringing_timeout: int
 
 
 class FreeboxUserInput(TypedDict):
-    """Données saisies lors de la première étape du config flow."""
+    """Data entered during the first config flow step."""
 
     host: str
-    area: str
+
 
 class FreeboxAuthorizeResult(TypedDict):
-    """Résultat de la demande d'autorisation Freebox."""
+    """Result of a Freebox authorization request."""
 
     app_token: str
     track_id: str
 
 
 class FreeboxAuthorizeResponse(TypedDict):
-    """Réponse de l'API Freebox pour une demande d'autorisation."""
+    """Freebox response for an authorization request."""
 
     success: bool
     result: FreeboxAuthorizeResult
 
 
 class FreeboxAuthorizationStatusResult(TypedDict):
-    """Statut d'une demande d'autorisation."""
+    """Authorization request status."""
 
     status: str
 
 
 class FreeboxAuthorizationStatusResponse(TypedDict):
-    """Réponse du statut d'autorisation Freebox."""
+    """Freebox authorization status response."""
 
     result: FreeboxAuthorizationStatusResult

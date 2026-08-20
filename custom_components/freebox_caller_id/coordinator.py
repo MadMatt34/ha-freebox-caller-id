@@ -13,6 +13,7 @@ import aiohttp
 from aiohttp import ClientSession
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
@@ -36,7 +37,7 @@ from .types import (
 
 _LOGGER = logging.getLogger(__name__)
 
-MAX_BACKOFF_INTERVAL = 60
+REQUEST_TIMEOUT = 5
 
 
 class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
@@ -65,8 +66,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         self.app_id = APP_ID
         self.app_token = app_token
         self.entry_id = entry_id
-
-        self.base_scan_interval = scan_interval
         self.ringing_timeout = ringing_timeout
 
         self.session_token: str | None = None
@@ -85,8 +84,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         # existed before Home Assistant started.
         self._last_seen_call_id: int | None = None
 
-        self._consecutive_failures = 0
-
     @property
     def device_info(self) -> DeviceInfo:
         """Return the cached device information."""
@@ -99,11 +96,11 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             name="Freebox Phone",
             manufacturer="Free",
             model="Freebox Server",
-            configuration_url=f"https://{self.host}",
+            configuration_url=f"http://{self.host}",
         )
 
     def _update_device_info(self) -> None:
-        """Update the cached device information."""
+        """Update cached device information."""
         firmware_version = self.system_info.get("firmware_version")
 
         box_model: str | None = None
@@ -143,13 +140,29 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             sw_version=firmware_version,
             configuration_url=f"http://{self.host}",
         )
-
         self._device_info_signature = signature
+
+        # On the first refresh the device has not yet been created by the
+        # entity platform. After that, update only the existing device so
+        # user-controlled fields such as area and name are left untouched.
+        device_registry = dr.async_get(self.hass)
+        device = device_registry.async_get_device(
+            identifiers={(DOMAIN, self.entry_id)},
+        )
+
+        if device is not None:
+            device_registry.async_update_device(
+                device.id,
+                manufacturer="Free",
+                model=model,
+                sw_version=firmware_version,
+                configuration_url=f"http://{self.host}",
+            )
 
     async def _async_get_session(self) -> bool:
         """Obtain a new session token from the Freebox."""
         try:
-            timeout = aiohttp.ClientTimeout(total=5)
+            timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT)
 
             async with self.session.get(
                 f"http://{self.host}/api/v4/login/",
@@ -194,12 +207,14 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                     return False
 
                 self.session_token = data["result"]["session_token"]
-
                 return True
 
         except (
             aiohttp.ClientError,
             TimeoutError,
+            ValueError,
+            KeyError,
+            TypeError,
         ) as err:
             _LOGGER.debug(
                 "Failed to obtain Freebox session: %s",
@@ -217,33 +232,40 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             return
 
         try:
-            timeout = aiohttp.ClientTimeout(total=5)
+            timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT)
 
             async with self.session.get(
                 f"http://{self.host}/api/v4/system/",
                 headers=headers,
                 timeout=timeout,
             ) as response:
-                if response.status == 200:
-                    data = cast(
-                        FreeboxSystemResponse,
-                        await response.json(),
-                    )
-
-                    if data["success"]:
-                        self.system_info = data["result"]
-                        self._update_device_info()
-
-                        _LOGGER.debug(
-                            "Freebox system information retrieved: %s",
-                            self.system_info,
-                        )
-                else:
+                if response.status != 200:
                     _LOGGER.warning(
                         "Unable to retrieve /api/v4/system/ "
                         "(HTTP %d)",
                         response.status,
                     )
+                    return
+
+                data = cast(
+                    FreeboxSystemResponse,
+                    await response.json(),
+                )
+
+                if not data["success"]:
+                    _LOGGER.warning(
+                        "Freebox /api/v4/system/ returned an unsuccessful "
+                        "response.",
+                    )
+                    return
+
+                self.system_info = data["result"]
+                self._update_device_info()
+
+                _LOGGER.debug(
+                    "Freebox system information retrieved: %s",
+                    self.system_info,
+                )
 
         except (
             aiohttp.ClientError,
@@ -258,35 +280,18 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             )
 
     def _handle_failure(self, reason: str) -> NoReturn:
-        """Handle a failed update with exponential backoff."""
-        self._consecutive_failures += 1
-
+        """Handle a failed update."""
         self.session_token = None
 
-        # Clear the system data so the information is refreshed after
-        # the Freebox comes back online.
+        # Force system information to be refreshed after the Freebox
+        # comes back online.
         #
-        # The DeviceInfo cache itself is intentionally preserved.
+        # The cached DeviceInfo itself is intentionally preserved.
         self.system_info = {}
-
-        backoff_seconds = min(
-            MAX_BACKOFF_INTERVAL,
-            self.base_scan_interval * (2**self._consecutive_failures),
-        )
 
         raise UpdateFailed(
             f"Freebox unavailable: {reason}",
-            retry_after=backoff_seconds,
         )
-
-    def _handle_success(self) -> None:
-        """Handle a successful update."""
-        if self._consecutive_failures > 0:
-            _LOGGER.info(
-                "Connection to Freebox restored after %d failure(s).",
-                self._consecutive_failures,
-            )
-            self._consecutive_failures = 0
 
     @staticmethod
     def _is_incoming(call_type: CallType) -> bool:
@@ -338,7 +343,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
     async def _async_update_data(self) -> FreeboxCallerData:
         """Fetch the latest data from the Freebox."""
-        timeout = aiohttp.ClientTimeout(total=5)
+        timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT)
 
         try:
             if (
@@ -360,7 +365,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             ) as response:
                 if response.status == 403:
                     _LOGGER.debug(
-                        "Session expired (403), attempting renewal..."
+                        "Session expired (403), attempting renewal...",
                     )
 
                     if await self._async_get_session():
@@ -403,15 +408,16 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             if not data["success"]:
                 self._handle_failure("Invalid API response")
 
-            self._handle_success()
-
             calls_result = data.get("result", [])
 
+            # An empty call log is valid.
             if not calls_result:
                 return {
                     "system": self.system_info,
                 }
 
+            # The Freebox call log is ordered from the most recent call
+            # to the oldest one.
             last_call = calls_result[0]
 
             call_id = last_call.get("id")
@@ -447,6 +453,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             typed_call_time = float(call_time)
             now = time.time()
 
+            # The first observed call only initializes the reference.
             if self._last_seen_call_id is None:
                 self._last_seen_call_id = call_id
 
@@ -517,9 +524,12 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         except (
             aiohttp.ClientError,
             TimeoutError,
+            ValueError,
+            KeyError,
+            TypeError,
         ) as err:
             self._handle_failure(
-                f"Network error / timeout: {err}",
+                f"Freebox communication error: {err}",
             )
 
         except UpdateFailed:

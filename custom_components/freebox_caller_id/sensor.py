@@ -1,4 +1,4 @@
-"""Capteur affichant le dernier appelant et l'historique récent."""
+"""Sensor displaying the latest caller and recent call history."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ async def async_setup_entry(
     entry: FreeboxConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Configuration du sensor."""
+    """Set up the last call sensor."""
     async_add_entities(
         [
             FreeboxLastCallSensor(
@@ -29,7 +29,7 @@ async def async_setup_entry(
 
 
 class FreeboxLastCallSensor(FreeboxCallerIDEntity, SensorEntity):
-    """Entité stockant le dernier appel et l'historique des 10 derniers appels."""
+    """Store the latest call and the recent call history."""
 
     _attr_translation_key = "last_call"
 
@@ -38,13 +38,13 @@ class FreeboxLastCallSensor(FreeboxCallerIDEntity, SensorEntity):
         coordinator: FreeboxCallerCoordinator,
         entry: FreeboxConfigEntry,
     ) -> None:
-        """Initialise le capteur."""
-        super().__init__(coordinator, entry)
+        """Initialize the sensor."""
+        super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_last_call"
 
     @property
     def native_value(self) -> str:
-        """Affiche le nom ou le numéro du tout dernier appelant."""
+        """Return the name or number of the latest caller."""
         data: FreeboxCallerData | None = self.coordinator.data
 
         if data:
@@ -61,7 +61,7 @@ class FreeboxLastCallSensor(FreeboxCallerIDEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, object]:
-        """Expose le dernier appel et l'historique."""
+        """Expose the latest call and recent history."""
         data: FreeboxCallerData | None = self.coordinator.data
 
         if data:

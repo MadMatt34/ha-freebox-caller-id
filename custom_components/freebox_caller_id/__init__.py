@@ -54,7 +54,8 @@ async def async_setup_entry(
         ringing_timeout=ringing_timeout,
     )
 
-    # Use Home Assistant's native ConfigEntryNotReady handling.
+    # Let Home Assistant handle ConfigEntryNotReady if the Freebox
+    # is unavailable during the initial refresh.
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinator

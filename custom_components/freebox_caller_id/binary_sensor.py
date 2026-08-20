@@ -1,4 +1,4 @@
-"""Support du capteur binaire pour la sonnerie Freebox."""
+"""Binary sensor for the Freebox phone ringing state."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ async def async_setup_entry(
     entry: FreeboxConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Configuration du binary sensor."""
+    """Set up the ringing binary sensor."""
     async_add_entities(
         [
             FreeboxRingingSensor(
@@ -35,7 +35,7 @@ class FreeboxRingingSensor(
     FreeboxCallerIDEntity,
     BinarySensorEntity,
 ):
-    """Capteur binaire indiquant si le téléphone sonne."""
+    """Binary sensor indicating whether the phone is ringing."""
 
     _attr_translation_key = "ringing"
     _attr_device_class = BinarySensorDeviceClass.SOUND
@@ -45,13 +45,13 @@ class FreeboxRingingSensor(
         coordinator: FreeboxCallerCoordinator,
         entry: FreeboxConfigEntry,
     ) -> None:
-        """Initialise le capteur binaire."""
-        super().__init__(coordinator, entry)
+        """Initialize the binary sensor."""
+        super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_ringing"
 
     @property
     def is_on(self) -> bool:
-        """Retourne True si le téléphone est en train de sonner."""
+        """Return whether the phone is currently ringing."""
         data: FreeboxCallerData | None = self.coordinator.data
 
         if data:
@@ -61,7 +61,7 @@ class FreeboxRingingSensor(
 
     @property
     def extra_state_attributes(self) -> dict[str, object]:
-        """Attributs additionnels lors de la sonnerie."""
+        """Return additional attributes while ringing."""
         data: FreeboxCallerData | None = self.coordinator.data
 
         if data and self.is_on:

@@ -294,7 +294,7 @@ class FreeboxCallerIDOptionsFlow(config_entries.OptionsFlow):
 
         options_schema = vol.Schema(
             {
-                vol.Required(
+                vol.Optional(
                     CONF_SCAN_INTERVAL,
                     default=scan_interval,
                 ): selector.NumberSelector(
@@ -302,8 +302,7 @@ class FreeboxCallerIDOptionsFlow(config_entries.OptionsFlow):
                         min=1,
                         max=60,
                         step=1,
-                        mode="slider",
-                        unit_of_measurement="s",
+                        mode=selector.NumberSelectorMode.BOX,
                     )
                 ),
                 vol.Optional(
@@ -314,8 +313,7 @@ class FreeboxCallerIDOptionsFlow(config_entries.OptionsFlow):
                         min=1,
                         max=180,
                         step=1,
-                        mode="slider",
-                        unit_of_measurement="s",
+                        mode=selector.NumberSelectorMode.BOX,
                     )
                 ),
             }

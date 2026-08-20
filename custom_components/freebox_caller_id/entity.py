@@ -5,7 +5,6 @@ from __future__ import annotations
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import FreeboxConfigEntry
 from .coordinator import FreeboxCallerCoordinator
 
 
@@ -19,11 +18,9 @@ class FreeboxCallerIDEntity(
     def __init__(
         self,
         coordinator: FreeboxCallerCoordinator,
-        entry: FreeboxConfigEntry,
     ) -> None:
         """Initialize the entity."""
         super().__init__(coordinator)
-        self._entry = entry
 
     @property
     def device_info(self) -> DeviceInfo:
