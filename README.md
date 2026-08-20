@@ -21,10 +21,10 @@ By default, the [Freebox OS API](https://dev.freebox.fr/sdk/os/) does not send p
 This integration performs fast, asynchronous HTTP polling (every 2 seconds by default) to:
 
 - Fire a **native event** (`freebox_incoming_call`) on the first ring signal.
-- Turn on a **binary sensor** (`binary_sensor.area_freebox_phone_xxxxxx_ringing`) while the phone is ringing, enriched with caller information.
-- Store the caller's details in a **dedicated sensor** (`sensor.area_freebox_phone_xxxxxx_last_call`), alongside a history of the last 10 calls.
+- Turn on a **binary sensor** (`binary_sensor.freebox_phone_ringing`) while the phone is ringing, enriched with caller information.
+- Store the caller's details in a **dedicated sensor** (`sensor.freebox_phone_last_call`), alongside a history of the last 10 calls.
 - Work **100% locally** without any cloud dependency.
-- Smoothly handle Freebox reboots using an **exponential backoff** algorithm to avoid flooding Home Assistant log files.
+- Smoothly handle Freebox reboots.
 
 ---
 
@@ -104,7 +104,7 @@ Fired instantaneously as soon as a new incoming call starts ringing.
 
 ---
 
-### 2. Binary Sensor: `binary_sensor.area_freebox_phone_xxxxxx_ringing`
+### 2. Binary Sensor: `binary_sensor.freebox_phone_ringing`
 
 - **Device Class**: `sound`
 - **State**:
@@ -118,7 +118,7 @@ Fired instantaneously as soon as a new incoming call starts ringing.
 
 ---
 
-### 3. Sensor: `sensor.area_freebox_phone_xxxxxx_last_call`
+### 3. Sensor: `sensor.freebox_phone_last_call`
 
 - **State**: Name or phone number of the last recorded caller.
 - **Attributes:** List of the last 10 calls with the following details:
@@ -169,7 +169,7 @@ alias: "Freebox - Pause/Resume Media on Ringing"
 description: "Handles media playback pause and resume during ringing phone calls"
 trigger:
   - platform: state
-    entity_id: binary_sensor.area_freebox_phone_xxxxxx_ringing
+    entity_id: binary_sensor.freebox_phone_ringing
     to: "on"
 action:
   # 1. Pause TV or speaker
@@ -180,7 +180,7 @@ action:
   # 2. Wait until phone stops ringing (sensor turns 'off')
   - wait_for_trigger:
       - platform: state
-        entity_id: binary_sensor.area_freebox_phone_xxxxxx_ringing
+        entity_id: binary_sensor.freebox_phone_ringing
         to: "off"
 
   # 3. Resume playback
@@ -198,7 +198,7 @@ A call history table for your Home Assistant dashboard using Markdown + Card-Mod
 ```yaml
 type: markdown
 content: >
-  {%- set calls = state_attr('sensor.area_freebox_phone_xxxxxx_last_call',
+  {%- set calls = state_attr('sensor.freebox_phone_last_call',
   'calls') -%}
   | | Name | Number | Date | Duration |
   
@@ -252,7 +252,7 @@ An animated tile card that appears when the phone rings (uses Tile Card + Card-M
 
 ```yaml
 type: tile
-entity: binary_sensor.area_freebox_phone_xxxxxx_ringing
+entity: binary_sensor.freebox_phone_ringing
 name: "Ringing: Incoming Call"
 state_content:
   - caller_name
@@ -286,7 +286,7 @@ visibility:
 If your Freebox reboots or undergoes a firmware update:
 
 - A single warning log is logged in Home Assistant when communication is lost.
-- The integration enters **Exponential Backoff** mode (`2s -> 4s -> 8s -> 16s -> 32s -> 60s`).
+- As soon as the Freebox becomes unavailable, the integration reports the failure to Home Assistant’s `DataUpdateCoordinator`.
 - Once the Freebox comes back online, the session automatically re-authenticates and restores the original polling interval without requiring a Home Assistant restart.
 
 ---
