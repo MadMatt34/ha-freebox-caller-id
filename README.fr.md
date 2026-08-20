@@ -21,10 +21,10 @@ Par défaut, l'[API Freebox OS](https://dev.freebox.fr/sdk/os/) n'émet aucun pu
 Cette intégration effectue un scan HTTP rapide et asynchrone (polling toutes les 2 secondes par défaut) pour :
 
 - Déclencher un **événement natif** (`freebox_incoming_call`) dès le premier signal de sonnerie.
-- Activer un **capteur binaire** (`binary_sensor.piece_freebox_phone_xxxxxx_sonnerie`) pendant toute la durée où le téléphone sonne, avec les informations de l'appelant.
-- Conserver les données de l'appelant dans un **capteur dédié** (`sensor.piece_freebox_phone_xxxxxx_dernier_appel`), et l'historique des 10 derniers appels.
+- Activer un **capteur binaire** (`binary_sensor.freebox_phone_sonnerie`) pendant toute la durée où le téléphone sonne, avec les informations de l'appelant.
+- Conserver les données de l'appelant dans un **capteur dédié** (`sensor.freebox_phone_dernier_appel`), et l'historique des 10 derniers appels.
 - Fonctionner en **local**, sans cloud
-- Gérer de manière transparente les redémarrages de la Freebox grâce à un algorithme de **reconnexion progressive** (*exponential backoff*) pour ne pas polluer les journaux de Home Assistant.
+- Gérer de manière transparente les redémarrages de la Freebox.
 
 ---
 
@@ -104,7 +104,7 @@ Vous pouvez ajuster certains paramètres à tout moment :
 
 ---
 
-### 2. Capteur binaire : `binary_sensor.piece_freebox_phone_xxxxxx_sonnerie`
+### 2. Capteur binaire : `binary_sensor.freebox_phone_sonnerie`
 
 - **Device Class** : `sound`
 - **État** :
@@ -118,7 +118,7 @@ Vous pouvez ajuster certains paramètres à tout moment :
 
 ---
 
-### 3. Capteur : `sensor.piece_freebox_phone_xxxxxx_dernier_appel`
+### 3. Capteur : `sensor.freebox_phone_dernier_appel`
 
 - **État** : Nom ou numéro du dernier appelant enregistré.
 - **Attributs enrichis :** Liste des 10 derniers appels avec les informations suivantes
@@ -169,7 +169,7 @@ alias: "Freebox - Pause Musique / TV sur Sonnerie"
 description: "Gère la mise en pause et la reprise des médias pendant qu'un appel sonne"
 trigger:
   - platform: state
-    entity_id: binary_sensor.piece_freebox_phone_xxxxxx_sonnerie
+    entity_id: binary_sensor.freebox_phone_sonnerie
     to: "on"
 action:
   # 1. Mise en pause de la TV ou enceinte
@@ -180,7 +180,7 @@ action:
   # 2. Attente de la fin de la sonnerie (passage du capteur à 'off')
   - wait_for_trigger:
       - platform: state
-        entity_id: binary_sensor.piece_freebox_phone_xxxxxx_sonnerie
+        entity_id: binary_sensor.freebox_phone_sonnerie
         to: "off"
 
   # 3. Reprise de la lecture
@@ -198,7 +198,7 @@ Une belle carte d'historique sur votre tableau de bord Home Assistant en utilisa
 ```yaml
 type: markdown
 content: >
-  {%- set calls = state_attr('sensor.piece_freebox_phone_xxxxxx_dernier_appel',
+  {%- set calls = state_attr('sensor.freebox_phone_dernier_appel',
   'calls') -%}
   | | Nom | Numéro | Date | Durée |
   
@@ -252,7 +252,7 @@ Une belle carte pour apporter un visuel quand le téléphone sonne en utilisant 
 
 ```yaml
 type: tile
-entity: binary_sensor.piece_freebox_phone_xxxxxx_sonnerie
+entity: binary_sensor.freebox_phone_sonnerie
 name: "Sonnerie : Appel entrant"
 state_content:
   - caller_name
@@ -286,7 +286,7 @@ visibility:
 En cas de redémarrage de la Freebox ou de mise à jour du firmware :
 
 - Un avertissement unique est inscrit dans les journaux de Home Assistant lors de la perte de communication.
-- L'intégration bascule en mode **Backoff Exponentiel** (`2s -> 4s -> 8s -> 16s -> 32s -> 60s`).
+- Dès l'indisponibilité de la Freebox, l'intégration signale l'échec au `DataUpdateCoordinator` de Home Assistant.
 - Dès le retour en ligne de la Freebox, la session est automatiquement ré-authentifiée et l'intervalle de balayage d'origine est rétabli, sans nécessiter de redémarrage de Home Assistant.
 
 ---
