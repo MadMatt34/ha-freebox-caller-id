@@ -194,7 +194,7 @@ async def test_async_setup_entry_propagates_config_entry_not_ready(
     ):
         await async_setup_entry(hass, entry)
 
-    assert entry.runtime_data is None
+    assert not hasattr(entry, "runtime_data")
     forward_setups.assert_not_awaited()
 
 
