@@ -2,7 +2,19 @@ name: HACS Action
 
 on:
   push:
+    branches: [ "main" ]
+    paths-ignore:
+      - 'README.**'
+      - '.github/workflows/**'
+      - '.gitignore'
+      - 'custom_components/freebox_caller_id/brand/**'
   pull_request:
+    branches: [ "main" ]
+    paths-ignore:
+      - 'README.**'
+      - '.github/workflows/**'
+      - '.gitignore'
+      - 'custom_components/freebox_caller_id/brand/**'
 
 jobs:
   hacs:
