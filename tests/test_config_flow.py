@@ -503,7 +503,7 @@ async def test_reauth_flow_rejects_different_freebox(
     )
 
     assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "wrong_account"
+    assert result["reason"] == "unique_id_mismatch"
 
 
 async def test_reauth_flow_connection_error(
