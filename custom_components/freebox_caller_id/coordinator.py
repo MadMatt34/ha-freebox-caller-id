@@ -23,11 +23,11 @@ from homeassistant.helpers.update_coordinator import (
 from .const import APP_ID, DOMAIN, EVENT_INCOMING_CALL
 from .types import (
     CallType,
-    FreeboxAuthenticationErrorResponse,
     FreeboxCall,
     FreeboxCallerData,
     FreeboxCallLogResponse,
     FreeboxChallengeResult,
+    FreeboxErrorResponse,
     FreeboxIncomingCallEvent,
     FreeboxLoginResponse,
     FreeboxRecentCall,
@@ -71,7 +71,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
         self.session_token: str | None = None
         self.system_info: FreeboxSystemInfo = {}
-
         self._device_info = self._create_default_device_info()
         self._device_info_signature: tuple[str, str | None] = (
             "Freebox Server",
@@ -116,7 +115,11 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         if not box_model:
             box_model = self.system_info.get("board_name")
 
-        model = f"Freebox Server (modèle {box_model})" if box_model else "Freebox Server"
+        model = (
+            f"Freebox Server (modèle {box_model})"
+            if box_model
+            else "Freebox Server"
+        )
 
         signature = (
             model,
@@ -197,7 +200,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
                     if isinstance(raw_data, dict):
                         error_data = cast(
-                            FreeboxAuthenticationErrorResponse,
+                            FreeboxErrorResponse,
                             raw_data,
                         )
 
@@ -361,7 +364,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                 self._handle_failure("Unable to open a session")
 
             assert self.session_token is not None
-
             headers = {"X-Fbx-App-Auth": self.session_token}
 
             await self._async_fetch_system_info(headers)
@@ -375,7 +377,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                     _LOGGER.debug(
                         "Session expired (403), attempting renewal...",
                     )
-
                     if await self._async_get_session():
                         assert self.session_token is not None
 
@@ -427,7 +428,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             # The Freebox call log is ordered from the most recent call
             # to the oldest one.
             last_call = calls_result[0]
-
             call_id = last_call.get("id")
             call_type = last_call.get("type")
             duration = last_call.get("duration", 0)
