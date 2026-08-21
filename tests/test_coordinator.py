@@ -10,7 +10,6 @@ import pytest
 from custom_components.freebox_caller_id.const import EVENT_INCOMING_CALL
 from custom_components.freebox_caller_id.coordinator import FreeboxCallerCoordinator
 
-
 FREEBOX_HOST = "192.168.1.254"
 APP_TOKEN = "test-app-token"
 ENTRY_ID = "test-entry-id"

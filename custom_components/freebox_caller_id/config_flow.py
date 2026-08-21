@@ -34,7 +34,6 @@ from .types import (
     FreeboxUserInput,
 )
 
-
 _LOGGER = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT = 5

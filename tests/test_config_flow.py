@@ -19,7 +19,6 @@ from custom_components.freebox_caller_id.const import (
     DOMAIN,
 )
 
-
 FREEBOX_HOST = "192.168.1.254"
 FREEBOX_UID = "test-freebox-uid"
 APP_TOKEN = "test-app-token"
