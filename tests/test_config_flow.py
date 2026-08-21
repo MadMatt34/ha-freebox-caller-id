@@ -43,11 +43,7 @@ def _register_freebox_api(
     aioclient_mock.get(
         f"{base_url}/api_version",
         status=api_version_status,
-        json=(
-            api_version_json
-            if api_version_json is not None
-            else {"uid": FREEBOX_UID}
-        ),
+        json=(api_version_json if api_version_json is not None else {"uid": FREEBOX_UID}),
     )
 
     aioclient_mock.post(
@@ -164,11 +160,7 @@ async def test_user_flow_uses_default_host(
 
     schema = result["data_schema"].schema
 
-    host_key = next(
-        key
-        for key in schema
-        if getattr(key, "schema", None) == CONF_HOST
-    )
+    host_key = next(key for key in schema if getattr(key, "schema", None) == CONF_HOST)
 
     assert host_key.default() == DEFAULT_HOST
 
