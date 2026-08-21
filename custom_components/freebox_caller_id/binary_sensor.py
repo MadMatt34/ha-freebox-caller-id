@@ -14,7 +14,6 @@ from .coordinator import FreeboxCallerCoordinator
 from .entity import FreeboxCallerIDEntity
 from .types import FreeboxCallerData
 
-
 PARALLEL_UPDATES = 0
 
 
