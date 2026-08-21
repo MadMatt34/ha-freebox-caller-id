@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 import hashlib
 import hmac
 import logging
 import time
-from datetime import timedelta
 from typing import NoReturn, cast
 
 import aiohttp
 from aiohttp import ClientSession
-
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -24,8 +23,8 @@ from .const import APP_ID, DOMAIN, EVENT_INCOMING_CALL
 from .types import (
     CallType,
     FreeboxCall,
-    FreeboxCallLogResponse,
     FreeboxCallerData,
+    FreeboxCallLogResponse,
     FreeboxChallengeResult,
     FreeboxIncomingCallEvent,
     FreeboxLoginResponse,
@@ -41,7 +40,7 @@ REQUEST_TIMEOUT = 5
 
 
 class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
-    """Manage updates from the Freebox."""
+    """Manage updates from the Freebox"""
 
     def __init__(
         self,
@@ -110,19 +109,12 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             if isinstance(model_info, str):
                 box_model = model_info
             else:
-                box_model = (
-                    model_info.get("pretty_name")
-                    or model_info.get("name")
-                )
+                box_model = model_info.get("pretty_name") or model_info.get("name")
 
         if not box_model:
             box_model = self.system_info.get("board_name")
 
-        model = (
-            f"Freebox Server (modèle {box_model})"
-            if box_model
-            else "Freebox Server"
-        )
+        model = f"Freebox Server (modèle {box_model})" if box_model else "Freebox Server"
 
         signature = (
             model,
@@ -241,8 +233,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             ) as response:
                 if response.status != 200:
                     _LOGGER.warning(
-                        "Unable to retrieve /api/v4/system/ "
-                        "(HTTP %d)",
+                        "Unable to retrieve /api/v4/system/ (HTTP %d)",
                         response.status,
                     )
                     return
@@ -254,8 +245,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
                 if not data["success"]:
                     _LOGGER.warning(
-                        "Freebox /api/v4/system/ returned an unsuccessful "
-                        "response.",
+                        "Freebox /api/v4/system/ returned an unsuccessful response.",
                     )
                     return
 
@@ -346,10 +336,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT)
 
         try:
-            if (
-                not self.session_token
-                and not await self._async_get_session()
-            ):
+            if not self.session_token and not await self._async_get_session():
                 self._handle_failure("Unable to open a session")
 
             assert self.session_token is not None

@@ -6,12 +6,11 @@ import logging
 from typing import cast
 
 import aiohttp
-import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+import voluptuous as vol
 
 from .const import (
     APP_ID,
@@ -28,8 +27,8 @@ from .const import (
     DOMAIN,
 )
 from .types import (
-    FreeboxAuthorizeResponse,
     FreeboxAuthorizationStatusResponse,
+    FreeboxAuthorizeResponse,
     FreeboxConfigData,
     FreeboxOptionsData,
     FreeboxUserInput,
@@ -44,7 +43,7 @@ class FreeboxCallerIDConfigFlow(
     config_entries.ConfigFlow,
     domain=DOMAIN,
 ):
-    """Handle the Freebox Caller ID configuration flow."""
+    """Handle the Freebox Caller ID configuration flow"""
 
     VERSION = 1
 
@@ -146,9 +145,7 @@ class FreeboxCallerIDConfigFlow(
                                 )
 
                                 if data["success"]:
-                                    self.app_token = data["result"][
-                                        "app_token"
-                                    ]
+                                    self.app_token = data["result"]["app_token"]
                                     self.track_id = data["result"]["track_id"]
 
                                     return await self.async_step_authorize()
@@ -196,8 +193,7 @@ class FreeboxCallerIDConfigFlow(
 
             try:
                 async with session.get(
-                    f"http://{self.host}/api/v4/login/authorize/"
-                    f"{self.track_id}",
+                    f"http://{self.host}/api/v4/login/authorize/{self.track_id}",
                     timeout=REQUEST_TIMEOUT,
                 ) as response:
                     if response.status != 200:

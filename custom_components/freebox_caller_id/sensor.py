@@ -51,11 +51,7 @@ class FreeboxLastCallSensor(FreeboxCallerIDEntity, SensorEntity):
             name = data.get("caller_name")
             number = data.get("caller_number")
 
-            return (
-                name
-                if name and name != "Inconnu"
-                else (number or "Aucun")
-            )
+            return name if name and name != "Inconnu" else (number or "Aucun")
 
         return "Aucun"
 
