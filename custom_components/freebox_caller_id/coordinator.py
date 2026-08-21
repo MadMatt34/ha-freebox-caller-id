@@ -115,11 +115,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         if not box_model:
             box_model = self.system_info.get("board_name")
 
-        model = (
-            f"Freebox Server (modèle {box_model})"
-            if box_model
-            else "Freebox Server"
-        )
+        model = f"Freebox Server (modèle {box_model})" if box_model else "Freebox Server"
 
         signature = (
             model,
