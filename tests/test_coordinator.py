@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock
-
 import pytest
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from custom_components.freebox_caller_id.const import (
-    DOMAIN,
     EVENT_INCOMING_CALL,
 )
 from custom_components.freebox_caller_id.coordinator import (
@@ -142,9 +138,9 @@ async def test_first_call_initializes_without_event(
         events.append,
     )
 
-    data = await coordinator._async_update_data()  # noqa: SLF001
+    data = await coordinator._async_update_data()
 
-    assert coordinator._last_seen_call_id == 1  # noqa: SLF001
+    assert coordinator._last_seen_call_id == 1
     assert events == []
     assert data["is_ringing"] is True
 
@@ -166,7 +162,7 @@ async def test_new_incoming_call_fires_event(
 
     coordinator = _create_coordinator(hass)
     coordinator.session_token = SESSION_TOKEN
-    coordinator._last_seen_call_id = 1  # noqa: SLF001
+    coordinator._last_seen_call_id = 1
 
     events = []
     hass.bus.async_listen(
@@ -174,10 +170,10 @@ async def test_new_incoming_call_fires_event(
         events.append,
     )
 
-    await coordinator._async_update_data()  # noqa: SLF001
+    await coordinator._async_update_data()
     await hass.async_block_till_done()
 
-    assert coordinator._last_seen_call_id == 2  # noqa: SLF001
+    assert coordinator._last_seen_call_id == 2
     assert len(events) == 1
     assert events[0].data["id"] == 2
     assert events[0].data["number"] == "0123456789"
@@ -202,7 +198,7 @@ async def test_existing_call_does_not_fire_again(
 
     coordinator = _create_coordinator(hass)
     coordinator.session_token = SESSION_TOKEN
-    coordinator._last_seen_call_id = 1  # noqa: SLF001
+    coordinator._last_seen_call_id = 1
 
     events = []
     hass.bus.async_listen(
@@ -233,7 +229,7 @@ async def test_outgoing_call_does_not_fire_event(
 
     coordinator = _create_coordinator(hass)
     coordinator.session_token = SESSION_TOKEN
-    coordinator._last_seen_call_id = 1  # noqa: SLF001
+    coordinator._last_seen_call_id = 1
 
     events = []
     hass.bus.async_listen(
@@ -241,10 +237,10 @@ async def test_outgoing_call_does_not_fire_event(
         events.append,
     )
 
-    data = await coordinator._async_update_data()  # noqa: SLF001
+    data = await coordinator._async_update_data()
     await hass.async_block_till_done()
 
-    assert coordinator._last_seen_call_id == 2  # noqa: SLF001
+    assert coordinator._last_seen_call_id == 2
     assert events == []
     assert data["is_ringing"] is False
 
@@ -260,7 +256,7 @@ async def test_empty_call_log_is_valid(
     coordinator = _create_coordinator(hass)
     coordinator.session_token = SESSION_TOKEN
 
-    data = await coordinator._async_update_data()  # noqa: SLF001
+    data = await coordinator._async_update_data()
 
     assert data == {
         "system": {
@@ -288,7 +284,7 @@ def test_is_incoming(
     """Test incoming call classification."""
     coordinator = _create_coordinator(hass)
 
-    assert coordinator._is_incoming(call_type) is expected  # noqa: SLF001
+    assert coordinator._is_incoming(call_type) is expected
 
 
 @pytest.mark.parametrize(
@@ -307,7 +303,7 @@ def test_is_ringing_uses_duration_zero(
     coordinator = _create_coordinator(hass)
 
     assert (
-        coordinator._is_ringing(  # noqa: SLF001
+        coordinator._is_ringing(
             call_type="accepted",
             duration=duration,
             call_time=1_000,
@@ -324,7 +320,7 @@ def test_is_ringing_expires_after_timeout(
     coordinator = _create_coordinator(hass)
 
     assert (
-        coordinator._is_ringing(  # noqa: SLF001
+        coordinator._is_ringing(
             call_type="accepted",
             duration=0,
             call_time=1_000,
@@ -334,7 +330,7 @@ def test_is_ringing_expires_after_timeout(
     )
 
     assert (
-        coordinator._is_ringing(  # noqa: SLF001
+        coordinator._is_ringing(
             call_type="accepted",
             duration=0,
             call_time=1_000,
@@ -357,7 +353,7 @@ async def test_update_failed_clears_connection_state(
     device_info = coordinator.device_info
 
     with pytest.raises(UpdateFailed):
-        coordinator._handle_failure("Freebox unavailable")  # noqa: SLF001
+        coordinator._handle_failure("Freebox unavailable")
 
     assert coordinator.session_token is None
     assert coordinator.system_info == {}
@@ -405,7 +401,7 @@ async def test_session_expired_is_renewed(
     coordinator = _create_coordinator(hass)
     coordinator.session_token = "expired-token"
 
-    data = await coordinator._async_update_data()  # noqa: SLF001
+    data = await coordinator._async_update_data()
 
     assert coordinator.session_token == SESSION_TOKEN
     assert data["system"]["firmware_version"] == FIRMWARE
@@ -425,7 +421,7 @@ async def test_system_info_is_cached(
     coordinator = _create_coordinator(hass)
     coordinator.session_token = SESSION_TOKEN
 
-    await coordinator._async_update_data()  # noqa: SLF001
+    await coordinator._async_update_data()
 
     assert len(aioclient_mock.mock_calls) >= 2
 
@@ -435,7 +431,7 @@ async def test_system_info_is_cached(
         None,
     )
 
-    await coordinator._async_update_data()  # noqa: SLF001
+    await coordinator._async_update_data()
 
     system_requests = [
         call

@@ -63,7 +63,7 @@ def test_device_info_updates_from_model_info(
         },
     }
 
-    coordinator._update_device_info()  # noqa: SLF001
+    coordinator._update_device_info()
 
     device_info = coordinator.device_info
 
@@ -82,7 +82,7 @@ def test_device_info_falls_back_to_board_name(
         "board_name": "Freebox Delta",
     }
 
-    coordinator._update_device_info()  # noqa: SLF001
+    coordinator._update_device_info()
 
     assert coordinator.device_info["model"] == (
         "Freebox Server (modèle Freebox Delta)"
@@ -103,10 +103,10 @@ def test_device_info_does_not_rebuild_when_unchanged(
         },
     }
 
-    coordinator._update_device_info()  # noqa: SLF001
+    coordinator._update_device_info()
     device_info = coordinator.device_info
 
-    coordinator._update_device_info()  # noqa: SLF001
+    coordinator._update_device_info()
 
     assert coordinator.device_info is device_info
 
@@ -141,7 +141,7 @@ def test_device_info_updates_existing_device_metadata(
         },
     }
 
-    coordinator._update_device_info()  # noqa: SLF001
+    coordinator._update_device_info()
 
     updated_device = device_registry.async_get(device.id)
 
@@ -166,7 +166,7 @@ def test_device_info_is_preserved_when_system_info_is_cleared(
         },
     }
 
-    coordinator._update_device_info()  # noqa: SLF001
+    coordinator._update_device_info()
 
     device_info = coordinator.device_info
 
