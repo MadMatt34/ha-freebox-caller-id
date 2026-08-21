@@ -82,9 +82,7 @@ async def test_device_info_falls_back_to_board_name(
 
     coordinator._update_device_info()
 
-    assert coordinator.device_info["model"] == (
-        "Freebox Server (modèle Freebox Delta)"
-    )
+    assert coordinator.device_info["model"] == ("Freebox Server (modèle Freebox Delta)")
     assert coordinator.device_info["sw_version"] == "4.8.2"
 
 
@@ -170,7 +168,5 @@ async def test_device_info_is_preserved_when_system_info_is_cleared(
     coordinator.system_info = {}
 
     assert coordinator.device_info is device_info
-    assert coordinator.device_info["model"] == (
-        "Freebox Server (modèle Freebox Ultra)"
-    )
+    assert coordinator.device_info["model"] == ("Freebox Server (modèle Freebox Ultra)")
     assert coordinator.device_info["sw_version"] == "4.8.1"
