@@ -131,8 +131,7 @@ class FreeboxCallerIDConfigFlow(
             ValueError,
         ) as err:
             _LOGGER.warning(
-                "Unable to retrieve Freebox information during "
-                "reauthentication: %s",
+                "Unable to retrieve Freebox information during reauthentication: %s",
                 err,
             )
             return self.async_show_form(
@@ -276,9 +275,7 @@ class FreeboxCallerIDConfigFlow(
                                 )
 
                                 if data["success"]:
-                                    self.app_token = data["result"][
-                                        "app_token"
-                                    ]
+                                    self.app_token = data["result"]["app_token"]
                                     self.track_id = data["result"]["track_id"]
 
                                     return await self.async_step_authorize()
@@ -326,8 +323,7 @@ class FreeboxCallerIDConfigFlow(
 
             try:
                 async with session.get(
-                    f"http://{self.host}/api/v4/login/authorize/"
-                    f"{self.track_id}",
+                    f"http://{self.host}/api/v4/login/authorize/{self.track_id}",
                     timeout=REQUEST_TIMEOUT,
                 ) as response:
                     if response.status != 200:

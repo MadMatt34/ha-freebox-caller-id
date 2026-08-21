@@ -559,11 +559,7 @@ async def test_system_info_is_cached(
 
     await coordinator._async_update_data()
 
-    system_requests = [
-        call
-        for call in aioclient_mock.mock_calls
-        if "/api/v4/system/" in str(call)
-    ]
+    system_requests = [call for call in aioclient_mock.mock_calls if "/api/v4/system/" in str(call)]
 
     assert len(system_requests) == 1
 
@@ -574,10 +570,6 @@ async def test_system_info_is_cached(
 
     await coordinator._async_update_data()
 
-    system_requests = [
-        call
-        for call in aioclient_mock.mock_calls
-        if "/api/v4/system/" in str(call)
-    ]
+    system_requests = [call for call in aioclient_mock.mock_calls if "/api/v4/system/" in str(call)]
 
     assert len(system_requests) == 1
