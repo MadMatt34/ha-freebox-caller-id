@@ -109,7 +109,7 @@ class FreeboxCallLogResponse(TypedDict):
 
 
 class FreeboxConfigData(TypedDict, total=False):
-    """Data persisted in the config entry."""
+    """Data persisted in the config entry"""
 
     host: str
     app_token: str

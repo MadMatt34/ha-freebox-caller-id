@@ -41,7 +41,7 @@ REQUEST_TIMEOUT = 5
 
 
 class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
-    """Manage updates from the Freebox."""
+    """Manage updates from the Freebox"""
 
     def __init__(
         self,

@@ -44,7 +44,7 @@ class FreeboxCallerIDConfigFlow(
     config_entries.ConfigFlow,
     domain=DOMAIN,
 ):
-    """Handle the Freebox Caller ID configuration flow."""
+    """Handle the Freebox Caller ID configuration flow"""
 
     VERSION = 1
 
