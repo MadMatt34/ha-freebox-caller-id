@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+
 from custom_components.freebox_caller_id.const import (
     CONF_APP_TOKEN,
     CONF_HOST,

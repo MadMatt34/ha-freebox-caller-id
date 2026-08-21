@@ -5,7 +5,9 @@ from __future__ import annotations
 import pytest
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import UpdateFailed
+
 
 from custom_components.freebox_caller_id.const import (
     EVENT_INCOMING_CALL,
@@ -13,6 +15,7 @@ from custom_components.freebox_caller_id.const import (
 from custom_components.freebox_caller_id.coordinator import (
     FreeboxCallerCoordinator,
 )
+
 
 FREEBOX_HOST = "192.168.1.254"
 APP_TOKEN = "test-app-token"
@@ -101,7 +104,6 @@ def _create_coordinator(
     hass: HomeAssistant,
 ) -> FreeboxCallerCoordinator:
     """Create a coordinator."""
-    from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
     return FreeboxCallerCoordinator(
         hass=hass,

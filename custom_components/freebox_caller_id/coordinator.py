@@ -20,6 +20,7 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 
+
 from .const import APP_ID, DOMAIN, EVENT_INCOMING_CALL
 from .types import (
     CallType,
