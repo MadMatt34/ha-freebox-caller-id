@@ -17,6 +17,7 @@ ENTRY_ID = "test-entry-id"
 
 def _create_coordinator(
     hass: HomeAssistant,
+    entry_id: str = ENTRY_ID,
 ) -> FreeboxCallerCoordinator:
     """Create a coordinator for DeviceInfo tests."""
     return FreeboxCallerCoordinator(
@@ -24,7 +25,7 @@ def _create_coordinator(
         session=async_get_clientsession(hass),
         host=FREEBOX_HOST,
         app_token=APP_TOKEN,
-        entry_id=ENTRY_ID,
+        entry_id=entry_id,
         scan_interval=2,
         ringing_timeout=45,
     )
