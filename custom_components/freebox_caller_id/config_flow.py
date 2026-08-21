@@ -37,7 +37,6 @@ from .types import (
 _LOGGER = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT = 5
-PARALLEL_UPDATES = 0
 
 
 class FreeboxCallerIDConfigFlow(
