@@ -13,7 +13,6 @@ DEVICE_NAME = "Home Assistant"
 
 CONF_HOST = "host"
 CONF_APP_TOKEN = "app_token"
-CONF_AREA = "area"
 CONF_SCAN_INTERVAL = "scan_interval"
 DEFAULT_SCAN_INTERVAL = 2
 CONF_RINGING_TIMEOUT = "ringing_timeout"

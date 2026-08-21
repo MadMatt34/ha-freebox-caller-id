@@ -10,5 +10,22 @@
         "name": "Ringing"
       }
     }
+  },
+  "config": {
+    "step": {
+      "reauth_confirm": {
+        "title": "[%key:common::config_flow::title::reauth%]",
+        "description": "Freebox Caller ID needs to re-authenticate access to your Freebox."
+      }
+    },
+    "abort": {
+      "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]"
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to the Freebox.",
+      "auth_failed": "The Freebox rejected the authorization request.",
+      "pending_auth": "The authorization has not yet been confirmed on the Freebox.",
+      "auth_denied": "The authorization request was denied or expired."
+    }
   }
 }

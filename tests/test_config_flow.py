@@ -22,7 +22,9 @@ from custom_components.freebox_caller_id.const import (
 FREEBOX_HOST = "192.168.1.254"
 FREEBOX_UID = "test-freebox-uid"
 APP_TOKEN = "test-app-token"
+NEW_APP_TOKEN = "new-test-app-token"
 TRACK_ID = "test-track-id"
+REAUTH_TRACK_ID = "reauth-track-id"
 
 
 def _register_freebox_api(
@@ -362,6 +364,180 @@ async def test_authorize_connection_error(
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "authorize"
+    assert result["errors"] == {
+        "base": "cannot_connect",
+    }
+
+
+async def test_reauth_flow_success(
+    hass: HomeAssistant,
+    aioclient_mock,
+) -> None:
+    """Test successful reauthentication updates the existing entry."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Freebox Caller ID",
+        unique_id=FREEBOX_UID,
+        data={
+            CONF_HOST: FREEBOX_HOST,
+            CONF_APP_TOKEN: APP_TOKEN,
+            CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    base_url = f"http://{FREEBOX_HOST}"
+
+    aioclient_mock.get(
+        f"{base_url}/api_version",
+        json={"uid": FREEBOX_UID},
+    )
+    aioclient_mock.post(
+        f"{base_url}/api/v4/login/authorize/",
+        json={
+            "success": True,
+            "result": {
+                "app_token": NEW_APP_TOKEN,
+                "track_id": REAUTH_TRACK_ID,
+            },
+        },
+    )
+    aioclient_mock.get(
+        f"{base_url}/api/v4/login/authorize/{REAUTH_TRACK_ID}",
+        json={
+            "result": {
+                "status": "granted",
+            },
+        },
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_REAUTH,
+            "entry_id": entry.entry_id,
+            "unique_id": FREEBOX_UID,
+        },
+        data=entry.data,
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reauth_confirm"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "authorize"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reauth_successful"
+
+    updated_entry = hass.config_entries.async_get_entry(
+        entry.entry_id,
+    )
+
+    assert updated_entry is not None
+    assert updated_entry.data[CONF_APP_TOKEN] == NEW_APP_TOKEN
+    assert updated_entry.data[CONF_HOST] == FREEBOX_HOST
+    assert updated_entry.data[CONF_SCAN_INTERVAL] == DEFAULT_SCAN_INTERVAL
+
+    assert len(hass.config_entries.async_entries(DOMAIN)) == 1
+
+
+async def test_reauth_flow_rejects_different_freebox(
+    hass: HomeAssistant,
+    aioclient_mock,
+) -> None:
+    """Test that reauthentication cannot target another Freebox."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Freebox Caller ID",
+        unique_id=FREEBOX_UID,
+        data={
+            CONF_HOST: FREEBOX_HOST,
+            CONF_APP_TOKEN: APP_TOKEN,
+            CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    aioclient_mock.get(
+        f"http://{FREEBOX_HOST}/api_version",
+        json={"uid": "another-freebox-uid"},
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_REAUTH,
+            "entry_id": entry.entry_id,
+            "unique_id": FREEBOX_UID,
+        },
+        data=entry.data,
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reauth_confirm"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "unique_id_mismatch"
+
+
+async def test_reauth_flow_connection_error(
+    hass: HomeAssistant,
+    aioclient_mock,
+) -> None:
+    """Test a connection failure during reauthentication."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Freebox Caller ID",
+        unique_id=FREEBOX_UID,
+        data={
+            CONF_HOST: FREEBOX_HOST,
+            CONF_APP_TOKEN: APP_TOKEN,
+            CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    aioclient_mock.get(
+        f"http://{FREEBOX_HOST}/api_version",
+        exc=aiohttp.ClientError,
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_REAUTH,
+            "entry_id": entry.entry_id,
+            "unique_id": FREEBOX_UID,
+        },
+        data=entry.data,
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reauth_confirm"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reauth_confirm"
     assert result["errors"] == {
         "base": "cannot_connect",
     }

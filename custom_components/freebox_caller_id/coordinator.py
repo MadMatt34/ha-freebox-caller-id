@@ -11,6 +11,7 @@ from typing import NoReturn, cast
 
 import aiohttp
 from aiohttp import ClientSession
+from homeassistant.config_entries import ConfigEntryAuthFailed
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -22,6 +23,7 @@ from homeassistant.helpers.update_coordinator import (
 from .const import APP_ID, DOMAIN, EVENT_INCOMING_CALL
 from .types import (
     CallType,
+    FreeboxAuthenticationErrorResponse,
     FreeboxCall,
     FreeboxCallerData,
     FreeboxCallLogResponse,
@@ -40,7 +42,7 @@ REQUEST_TIMEOUT = 5
 
 
 class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
-    """Manage updates from the Freebox"""
+    """Manage updates from the Freebox."""
 
     def __init__(
         self,
@@ -187,6 +189,25 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                 json=payload,
                 timeout=timeout,
             ) as response:
+                if response.status == 403:
+                    try:
+                        raw_data = await response.json()
+                    except ValueError:
+                        return False
+
+                    if isinstance(raw_data, dict):
+                        error_data = cast(
+                            FreeboxAuthenticationErrorResponse,
+                            raw_data,
+                        )
+
+                        if error_data.get("error_code") == "invalid_token":
+                            raise ConfigEntryAuthFailed(
+                                "Freebox application token is invalid or revoked",
+                            )
+
+                    return False
+
                 if response.status != 200:
                     return False
 
@@ -507,6 +528,9 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                 "recent_calls": recent_calls,
                 "system": self.system_info,
             }
+
+        except ConfigEntryAuthFailed:
+            raise
 
         except (
             aiohttp.ClientError,

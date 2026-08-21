@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 import logging
 from typing import cast
 
@@ -37,14 +38,13 @@ from .types import (
 _LOGGER = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT = 5
-PARALLEL_UPDATES = 0
 
 
 class FreeboxCallerIDConfigFlow(
     config_entries.ConfigFlow,
     domain=DOMAIN,
 ):
-    """Handle the Freebox Caller ID configuration flow"""
+    """Handle the Freebox Caller ID configuration flow."""
 
     VERSION = 1
 
@@ -66,6 +66,136 @@ class FreeboxCallerIDConfigFlow(
         """Return the options flow."""
         return FreeboxCallerIDOptionsFlow()
 
+    async def async_step_reauth(
+        self,
+        entry_data: Mapping[str, object],
+    ) -> config_entries.ConfigFlowResult:
+        """Handle reauthentication."""
+        host = entry_data.get(CONF_HOST)
+
+        if not isinstance(host, str) or not host:
+            return self.async_abort(reason="auth_failed")
+
+        self.host = host
+
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self,
+        user_input: dict[str, object] | None = None,
+    ) -> config_entries.ConfigFlowResult:
+        """Confirm reauthentication."""
+        if user_input is None:
+            return self.async_show_form(
+                step_id="reauth_confirm",
+            )
+
+        if self.host is None:
+            return self.async_abort(reason="auth_failed")
+
+        session = async_get_clientsession(self.hass)
+
+        try:
+            async with session.get(
+                f"http://{self.host}/api_version",
+                timeout=REQUEST_TIMEOUT,
+            ) as response:
+                if response.status != 200:
+                    return self.async_show_form(
+                        step_id="reauth_confirm",
+                        errors={"base": "cannot_connect"},
+                    )
+
+                raw_data = await response.json()
+
+                if not isinstance(raw_data, dict):
+                    return self.async_show_form(
+                        step_id="reauth_confirm",
+                        errors={"base": "cannot_connect"},
+                    )
+
+                uid = raw_data.get("uid")
+
+                if not isinstance(uid, str) or not uid:
+                    return self.async_show_form(
+                        step_id="reauth_confirm",
+                        errors={"base": "cannot_connect"},
+                    )
+
+                await self.async_set_unique_id(uid)
+                self._abort_if_unique_id_mismatch()
+
+        except (
+            aiohttp.ClientError,
+            TimeoutError,
+            ValueError,
+        ) as err:
+            _LOGGER.warning(
+                "Unable to retrieve Freebox information during reauthentication: %s",
+                err,
+            )
+            return self.async_show_form(
+                step_id="reauth_confirm",
+                errors={"base": "cannot_connect"},
+            )
+
+        payload = {
+            "app_id": APP_ID,
+            "app_name": APP_NAME,
+            "app_version": APP_VERSION,
+            "device_name": DEVICE_NAME,
+        }
+
+        try:
+            async with session.post(
+                f"http://{self.host}/api/v4/login/authorize/",
+                json=payload,
+                timeout=REQUEST_TIMEOUT,
+            ) as response:
+                if response.status != 200:
+                    return self.async_show_form(
+                        step_id="reauth_confirm",
+                        errors={"base": "auth_failed"},
+                    )
+
+                raw_data = await response.json()
+
+                if not isinstance(raw_data, dict):
+                    return self.async_show_form(
+                        step_id="reauth_confirm",
+                        errors={"base": "auth_failed"},
+                    )
+
+                data = cast(
+                    FreeboxAuthorizeResponse,
+                    raw_data,
+                )
+
+                if not data["success"]:
+                    return self.async_show_form(
+                        step_id="reauth_confirm",
+                        errors={"base": "auth_failed"},
+                    )
+
+                self.app_token = data["result"]["app_token"]
+                self.track_id = data["result"]["track_id"]
+
+        except (
+            aiohttp.ClientError,
+            TimeoutError,
+            ValueError,
+        ) as err:
+            _LOGGER.warning(
+                "Unable to request Freebox reauthorization: %s",
+                err,
+            )
+            return self.async_show_form(
+                step_id="reauth_confirm",
+                errors={"base": "cannot_connect"},
+            )
+
+        return await self.async_step_authorize()
+
     async def async_step_user(
         self,
         user_input: dict[str, object] | None = None,
@@ -81,7 +211,6 @@ class FreeboxCallerIDConfigFlow(
                 FreeboxUserInput,
                 user_input,
             )
-
             self.host = input_data[CONF_HOST].strip()
 
             session = async_get_clientsession(self.hass)
@@ -228,6 +357,17 @@ class FreeboxCallerIDConfigFlow(
 
                 if self.unique_id is None:
                     return self.async_abort(reason="auth_failed")
+
+                if self.source == config_entries.SOURCE_REAUTH:
+                    reauth_entry = self._get_reauth_entry()
+
+                    return self.async_update_reload_and_abort(
+                        reauth_entry,
+                        data={
+                            **reauth_entry.data,
+                            CONF_APP_TOKEN: self.app_token,
+                        },
+                    )
 
                 entry_data: FreeboxConfigData = {
                     CONF_HOST: self.host,

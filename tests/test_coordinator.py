@@ -6,13 +6,16 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
+from homeassistant.config_entries import ConfigEntryAuthFailed
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import UpdateFailed
 import pytest
 
 from custom_components.freebox_caller_id.const import EVENT_INCOMING_CALL
-from custom_components.freebox_caller_id.coordinator import FreeboxCallerCoordinator
+from custom_components.freebox_caller_id.coordinator import (
+    FreeboxCallerCoordinator,
+)
 
 FREEBOX_HOST = "192.168.1.254"
 APP_TOKEN = "test-app-token"
@@ -113,7 +116,7 @@ def _create_coordinator(
 
 
 class _Response:
-    """Minimal aiohttp response for the 403 renewal test."""
+    """Minimal aiohttp response for the sequence tests."""
 
     def __init__(
         self,
@@ -441,6 +444,43 @@ async def test_update_failed_clears_connection_state(
     assert coordinator.device_info is device_info
 
 
+async def test_invalid_app_token_raises_auth_failed(
+    hass: HomeAssistant,
+) -> None:
+    """Test that an invalid Freebox app token triggers reauthentication."""
+    session = _SequenceSession(
+        call_log_responses=[],
+        challenge_response=_Response(
+            status=200,
+            payload={
+                "result": {
+                    "challenge": CHALLENGE,
+                },
+            },
+        ),
+        session_response=_Response(
+            status=403,
+            payload={
+                "success": False,
+                "error_code": "invalid_token",
+            },
+        ),
+    )
+
+    coordinator = FreeboxCallerCoordinator(
+        hass=hass,
+        session=session,  # type: ignore[arg-type]
+        host=FREEBOX_HOST,
+        app_token=APP_TOKEN,
+        entry_id=ENTRY_ID,
+        scan_interval=2,
+        ringing_timeout=45,
+    )
+
+    with pytest.raises(ConfigEntryAuthFailed):
+        await coordinator._async_get_session()
+
+
 async def test_session_expired_is_renewed(
     hass: HomeAssistant,
 ) -> None:
@@ -487,6 +527,7 @@ async def test_session_expired_is_renewed(
         scan_interval=2,
         ringing_timeout=45,
     )
+
     coordinator.session_token = "expired-token"
     coordinator.system_info = {
         "firmware_version": FIRMWARE,
