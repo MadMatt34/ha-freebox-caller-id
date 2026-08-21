@@ -363,8 +363,7 @@ class FreeboxCallerIDConfigFlow(
 
                     return self.async_update_reload_and_abort(
                         reauth_entry,
-                        data={
-                            **reauth_entry.data,
+                        data_updates={
                             CONF_APP_TOKEN: self.app_token,
                         },
                     )
