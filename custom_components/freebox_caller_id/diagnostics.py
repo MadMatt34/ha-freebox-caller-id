@@ -36,9 +36,7 @@ async def async_get_config_entry_diagnostics(
 
     if isinstance(sanitized_data, dict) and "recent_calls" in sanitized_data:
         sanitized_data["recent_calls"] = [
-            async_redact_data(call, TO_REDACT)
-            if isinstance(call, dict)
-            else call
+            async_redact_data(call, TO_REDACT) if isinstance(call, dict) else call
             for call in sanitized_data.get("recent_calls", [])
         ]
 
@@ -55,9 +53,7 @@ async def async_get_config_entry_diagnostics(
         "coordinator": {
             "last_update_success": coordinator.last_update_success,
             "update_interval": (
-                str(coordinator.update_interval)
-                if coordinator.update_interval
-                else None
+                str(coordinator.update_interval) if coordinator.update_interval else None
             ),
             "data": sanitized_data,
         },
