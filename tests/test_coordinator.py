@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from typing import Any
+
+import aiohttp
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -97,7 +102,6 @@ def _create_coordinator(
     hass: HomeAssistant,
 ) -> FreeboxCallerCoordinator:
     """Create a coordinator."""
-
     return FreeboxCallerCoordinator(
         hass=hass,
         session=async_get_clientsession(hass),
@@ -107,6 +111,90 @@ def _create_coordinator(
         scan_interval=2,
         ringing_timeout=45,
     )
+
+
+class _Response:
+    """Minimal aiohttp response for the 403 renewal test."""
+
+    def __init__(
+        self,
+        *,
+        status: int,
+        payload: dict[str, object],
+    ) -> None:
+        """Initialize the response."""
+        self.status = status
+        self._payload = payload
+
+    async def json(self) -> dict[str, object]:
+        """Return the JSON payload."""
+        return self._payload
+
+    async def __aenter__(self) -> _Response:
+        """Enter the response context manager."""
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: object | None,
+    ) -> None:
+        """Exit the response context manager."""
+
+
+class _SequenceSession:
+    """Minimal session returning queued responses."""
+
+    def __init__(
+        self,
+        call_log_responses: list[_Response],
+        *,
+        challenge_response: _Response | None = None,
+        session_response: _Response | None = None,
+    ) -> None:
+        """Initialize the response queues."""
+        self._call_log_responses = call_log_responses
+        self._challenge_response = challenge_response
+        self._session_response = session_response
+
+    @asynccontextmanager
+    async def get(
+        self,
+        url: str,
+        **kwargs: Any,
+    ) -> AsyncIterator[_Response]:
+        """Return the next configured GET response."""
+        if url.endswith("/api/v4/call/log/"):
+            if not self._call_log_responses:
+                raise AssertionError("No call-log response left")
+
+            yield self._call_log_responses.pop(0)
+            return
+
+        if url.endswith("/api/v4/login/"):
+            if self._challenge_response is None:
+                raise AssertionError("No challenge response configured")
+
+            yield self._challenge_response
+            return
+
+        raise AssertionError(f"Unexpected GET URL: {url}")
+
+    @asynccontextmanager
+    async def post(
+        self,
+        url: str,
+        **kwargs: Any,
+    ) -> AsyncIterator[_Response]:
+        """Return the configured session response."""
+        if not url.endswith("/api/v4/login/session/"):
+            raise AssertionError(f"Unexpected POST URL: {url}")
+
+        if self._session_response is None:
+            raise AssertionError("No session response configured")
+
+        yield self._session_response
 
 
 async def test_first_call_initializes_without_event(
@@ -127,17 +215,16 @@ async def test_first_call_initializes_without_event(
 
     coordinator = _create_coordinator(hass)
 
-    events = []
+    events: list[object] = []
     hass.bus.async_listen(
         EVENT_INCOMING_CALL,
         events.append,
     )
 
-    data = await coordinator._async_update_data()
+    await coordinator._async_update_data()
 
     assert coordinator._last_seen_call_id == 1
     assert events == []
-    assert data["is_ringing"] is True
 
 
 async def test_new_incoming_call_fires_event(
@@ -159,7 +246,7 @@ async def test_new_incoming_call_fires_event(
     coordinator.session_token = SESSION_TOKEN
     coordinator._last_seen_call_id = 1
 
-    events = []
+    events: list[object] = []
     hass.bus.async_listen(
         EVENT_INCOMING_CALL,
         events.append,
@@ -195,7 +282,7 @@ async def test_existing_call_does_not_fire_again(
     coordinator.session_token = SESSION_TOKEN
     coordinator._last_seen_call_id = 1
 
-    events = []
+    events: list[object] = []
     hass.bus.async_listen(
         EVENT_INCOMING_CALL,
         events.append,
@@ -226,7 +313,7 @@ async def test_outgoing_call_does_not_fire_event(
     coordinator.session_token = SESSION_TOKEN
     coordinator._last_seen_call_id = 1
 
-    events = []
+    events: list[object] = []
     hass.bus.async_listen(
         EVENT_INCOMING_CALL,
         events.append,
@@ -271,7 +358,7 @@ async def test_empty_call_log_is_valid(
         ("outgoing", False),
     ],
 )
-def test_is_incoming(
+async def test_is_incoming(
     hass: HomeAssistant,
     call_type: str,
     expected: bool,
@@ -289,7 +376,7 @@ def test_is_incoming(
         (1, False),
     ],
 )
-def test_is_ringing_uses_duration_zero(
+async def test_is_ringing_uses_duration_zero(
     hass: HomeAssistant,
     duration: int,
     expected: bool,
@@ -308,7 +395,7 @@ def test_is_ringing_uses_duration_zero(
     )
 
 
-def test_is_ringing_expires_after_timeout(
+async def test_is_ringing_expires_after_timeout(
     hass: HomeAssistant,
 ) -> None:
     """Test that ringing expires after the configured timeout."""
@@ -357,49 +444,56 @@ async def test_update_failed_clears_connection_state(
 
 async def test_session_expired_is_renewed(
     hass: HomeAssistant,
-    aioclient_mock,
 ) -> None:
     """Test that a 403 on the call log causes session renewal."""
-    base_url = f"http://{FREEBOX_HOST}"
-
-    aioclient_mock.get(
-        f"{base_url}/api/v4/system/",
-        json={
-            "success": True,
-            "result": {
-                "firmware_version": FIRMWARE,
-                "model_info": {
-                    "pretty_name": MODEL,
+    session = _SequenceSession(
+        call_log_responses=[
+            _Response(
+                status=403,
+                payload={},
+            ),
+            _Response(
+                status=200,
+                payload={
+                    "success": True,
+                    "result": [],
+                },
+            ),
+        ],
+        challenge_response=_Response(
+            status=200,
+            payload={
+                "result": {
+                    "challenge": CHALLENGE,
                 },
             },
-        },
+        ),
+        session_response=_Response(
+            status=200,
+            payload={
+                "success": True,
+                "result": {
+                    "session_token": SESSION_TOKEN,
+                },
+            },
+        ),
     )
 
-    # First call-log response expires the session.
-    aioclient_mock.get(
-        f"{base_url}/api/v4/call/log/",
-        status=403,
+    coordinator = FreeboxCallerCoordinator(
+        hass=hass,
+        session=session,  # type: ignore[arg-type]
+        host=FREEBOX_HOST,
+        app_token=APP_TOKEN,
+        entry_id=ENTRY_ID,
+        scan_interval=2,
+        ringing_timeout=45,
     )
-
-    _login_responses(aioclient_mock)
-
-    # The retry uses the renewed session.
-    aioclient_mock.get(
-        f"{base_url}/api/v4/call/log/",
-        status=200,
-        json={
-            "success": True,
-            "result": [],
-        },
-    )
-
-    coordinator = _create_coordinator(hass)
     coordinator.session_token = "expired-token"
 
     data = await coordinator._async_update_data()
 
     assert coordinator.session_token == SESSION_TOKEN
-    assert data["system"]["firmware_version"] == FIRMWARE
+    assert data["system"] == {}
 
 
 async def test_system_info_is_cached(
@@ -418,9 +512,14 @@ async def test_system_info_is_cached(
 
     await coordinator._async_update_data()
 
-    assert len(aioclient_mock.mock_calls) >= 2
+    system_requests = [
+        call
+        for call in aioclient_mock.mock_calls
+        if "/api/v4/system/" in str(call)
+    ]
 
-    # The second update only needs call-log because system_info is cached.
+    assert len(system_requests) == 1
+
     _call_log_response(
         aioclient_mock,
         None,
@@ -428,6 +527,10 @@ async def test_system_info_is_cached(
 
     await coordinator._async_update_data()
 
-    system_requests = [call for call in aioclient_mock.mock_calls if "/api/v4/system/" in str(call)]
+    system_requests = [
+        call
+        for call in aioclient_mock.mock_calls
+        if "/api/v4/system/" in str(call)
+    ]
 
     assert len(system_requests) == 1

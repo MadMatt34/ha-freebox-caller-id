@@ -7,9 +7,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from custom_components.freebox_caller_id.const import DOMAIN
-from custom_components.freebox_caller_id.coordinator import (
-    FreeboxCallerCoordinator,
-)
+from custom_components.freebox_caller_id.coordinator import FreeboxCallerCoordinator
 
 FREEBOX_HOST = "192.168.1.254"
 APP_TOKEN = "test-app-token"
@@ -31,7 +29,7 @@ def _create_coordinator(
     )
 
 
-def test_default_device_info(
+async def test_default_device_info(
     hass: HomeAssistant,
 ) -> None:
     """Test the initial DeviceInfo."""
@@ -49,7 +47,7 @@ def test_default_device_info(
     assert device_info["configuration_url"] == f"http://{FREEBOX_HOST}"
 
 
-def test_device_info_updates_from_model_info(
+async def test_device_info_updates_from_model_info(
     hass: HomeAssistant,
 ) -> None:
     """Test DeviceInfo update from Freebox system information."""
@@ -71,7 +69,7 @@ def test_device_info_updates_from_model_info(
     assert device_info["sw_version"] == "4.8.1"
 
 
-def test_device_info_falls_back_to_board_name(
+async def test_device_info_falls_back_to_board_name(
     hass: HomeAssistant,
 ) -> None:
     """Test the board_name fallback."""
@@ -84,11 +82,13 @@ def test_device_info_falls_back_to_board_name(
 
     coordinator._update_device_info()
 
-    assert coordinator.device_info["model"] == ("Freebox Server (modèle Freebox Delta)")
+    assert coordinator.device_info["model"] == (
+        "Freebox Server (modèle Freebox Delta)"
+    )
     assert coordinator.device_info["sw_version"] == "4.8.2"
 
 
-def test_device_info_does_not_rebuild_when_unchanged(
+async def test_device_info_does_not_rebuild_when_unchanged(
     hass: HomeAssistant,
 ) -> None:
     """Test that an unchanged signature reuses the cached DeviceInfo."""
@@ -109,14 +109,13 @@ def test_device_info_does_not_rebuild_when_unchanged(
     assert coordinator.device_info is device_info
 
 
-def test_device_info_updates_existing_device_metadata(
+async def test_device_info_updates_existing_device_metadata(
     hass: HomeAssistant,
 ) -> None:
     """Test that technical metadata is updated on an existing device."""
     coordinator = _create_coordinator(hass)
 
     device_registry = dr.async_get(hass)
-
     device = device_registry.async_get_or_create(
         config_entry_id=ENTRY_ID,
         identifiers={(DOMAIN, ENTRY_ID)},
@@ -151,7 +150,7 @@ def test_device_info_updates_existing_device_metadata(
     assert updated_device.sw_version == "4.8.3"
 
 
-def test_device_info_is_preserved_when_system_info_is_cleared(
+async def test_device_info_is_preserved_when_system_info_is_cleared(
     hass: HomeAssistant,
 ) -> None:
     """Test that the cached DeviceInfo survives a connection loss."""
@@ -171,5 +170,7 @@ def test_device_info_is_preserved_when_system_info_is_cleared(
     coordinator.system_info = {}
 
     assert coordinator.device_info is device_info
-    assert coordinator.device_info["model"] == ("Freebox Server (modèle Freebox Ultra)")
+    assert coordinator.device_info["model"] == (
+        "Freebox Server (modèle Freebox Ultra)"
+    )
     assert coordinator.device_info["sw_version"] == "4.8.1"
