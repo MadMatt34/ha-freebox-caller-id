@@ -4,11 +4,9 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
-from homeassistant import config_entries
+from homeassistant.config_entries import ConfigEntryNotReady
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
+import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.freebox_caller_id import (
@@ -40,6 +38,7 @@ def _create_entry(
         domain=DOMAIN,
         title="Freebox Caller ID",
         unique_id="test-freebox-uid",
+        version=1,
         data={
             CONF_HOST: FREEBOX_HOST,
             CONF_APP_TOKEN: APP_TOKEN,
@@ -91,7 +90,6 @@ async def test_async_setup_entry_success(
         entry,
         PLATFORMS,
     )
-
     assert entry.runtime_data is coordinator
 
 
@@ -123,9 +121,10 @@ async def test_async_setup_entry_uses_options(
             new=AsyncMock(),
         ),
     ):
-        await async_setup_entry(hass, entry)
+        result = await async_setup_entry(hass, entry)
 
-    coordinator_class.assert_called_once()
+    assert result is True
+
     call = coordinator_class.call_args.kwargs
 
     assert call["host"] == FREEBOX_HOST
@@ -158,7 +157,9 @@ async def test_async_setup_entry_uses_data_defaults(
             new=AsyncMock(),
         ),
     ):
-        await async_setup_entry(hass, entry)
+        result = await async_setup_entry(hass, entry)
+
+    assert result is True
 
     call = coordinator_class.call_args.kwargs
 
@@ -191,9 +192,9 @@ async def test_async_setup_entry_propagates_config_entry_not_ready(
             "async_forward_entry_setups",
             new=AsyncMock(),
         ) as forward_setups,
+        pytest.raises(ConfigEntryNotReady),
     ):
-        with pytest.raises(ConfigEntryNotReady):
-            await async_setup_entry(hass, entry)
+        await async_setup_entry(hass, entry)
 
     assert entry.runtime_data is None
     forward_setups.assert_not_awaited()
