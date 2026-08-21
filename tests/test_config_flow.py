@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import aiohttp
-
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -19,6 +18,7 @@ from custom_components.freebox_caller_id.const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
 )
+
 
 FREEBOX_HOST = "192.168.1.254"
 FREEBOX_UID = "test-freebox-uid"

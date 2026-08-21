@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 import hashlib
 import hmac
 import logging
 import time
-from datetime import timedelta
 from typing import NoReturn, cast
 
 import aiohttp
 from aiohttp import ClientSession
-
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -24,8 +23,8 @@ from .const import APP_ID, DOMAIN, EVENT_INCOMING_CALL
 from .types import (
     CallType,
     FreeboxCall,
-    FreeboxCallLogResponse,
     FreeboxCallerData,
+    FreeboxCallLogResponse,
     FreeboxChallengeResult,
     FreeboxIncomingCallEvent,
     FreeboxLoginResponse,
@@ -34,6 +33,7 @@ from .types import (
     FreeboxSystemInfo,
     FreeboxSystemResponse,
 )
+
 
 _LOGGER = logging.getLogger(__name__)
 

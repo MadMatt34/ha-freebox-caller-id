@@ -6,12 +6,11 @@ import logging
 from typing import cast
 
 import aiohttp
-import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+import voluptuous as vol
 
 from .const import (
     APP_ID,
@@ -28,12 +27,13 @@ from .const import (
     DOMAIN,
 )
 from .types import (
-    FreeboxAuthorizeResponse,
     FreeboxAuthorizationStatusResponse,
+    FreeboxAuthorizeResponse,
     FreeboxConfigData,
     FreeboxOptionsData,
     FreeboxUserInput,
 )
+
 
 _LOGGER = logging.getLogger(__name__)
 
