@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Literal, TypedDict
 
+
 CallType = Literal["accepted", "missed", "outgoing"]
 
 
@@ -86,8 +87,16 @@ class FreeboxLoginResponse(TypedDict):
     result: FreeboxChallengeResult
 
 
+class FreeboxAuthenticationErrorResponse(TypedDict, total=False):
+    """Freebox authentication error response."""
+
+    success: bool
+    error_code: str
+    result: FreeboxChallengeResult
+
+
 class FreeboxSessionResponse(TypedDict):
-    """Freebox response for opening a session."""
+    """Freebox response for opening a Freebox session."""
 
     success: bool
     result: FreeboxSessionResult
@@ -108,7 +117,7 @@ class FreeboxCallLogResponse(TypedDict):
 
 
 class FreeboxConfigData(TypedDict, total=False):
-    """Data persisted in the config entry"""
+    """Data persisted in the config entry."""
 
     host: str
     app_token: str

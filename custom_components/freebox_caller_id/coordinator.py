@@ -11,6 +11,8 @@ from typing import NoReturn, cast
 
 import aiohttp
 from aiohttp import ClientSession
+
+from homeassistant.config_entries import ConfigEntryAuthFailed
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -22,9 +24,10 @@ from homeassistant.helpers.update_coordinator import (
 from .const import APP_ID, DOMAIN, EVENT_INCOMING_CALL
 from .types import (
     CallType,
+    FreeboxAuthenticationErrorResponse,
     FreeboxCall,
-    FreeboxCallerData,
     FreeboxCallLogResponse,
+    FreeboxCallerData,
     FreeboxChallengeResult,
     FreeboxIncomingCallEvent,
     FreeboxLoginResponse,
@@ -40,7 +43,7 @@ REQUEST_TIMEOUT = 5
 
 
 class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
-    """Manage updates from the Freebox"""
+    """Manage updates from the Freebox."""
 
     def __init__(
         self,
@@ -109,12 +112,18 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             if isinstance(model_info, str):
                 box_model = model_info
             else:
-                box_model = model_info.get("pretty_name") or model_info.get("name")
+                box_model = model_info.get("pretty_name") or model_info.get(
+                    "name"
+                )
 
         if not box_model:
             box_model = self.system_info.get("board_name")
 
-        model = f"Freebox Server (modèle {box_model})" if box_model else "Freebox Server"
+        model = (
+            f"Freebox Server (modèle {box_model})"
+            if box_model
+            else "Freebox Server"
+        )
 
         signature = (
             model,
@@ -187,6 +196,25 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                 json=payload,
                 timeout=timeout,
             ) as response:
+                if response.status == 403:
+                    try:
+                        raw_data = await response.json()
+                    except ValueError:
+                        return False
+
+                    if isinstance(raw_data, dict):
+                        error_data = cast(
+                            FreeboxAuthenticationErrorResponse,
+                            raw_data,
+                        )
+
+                        if error_data.get("error_code") == "invalid_token":
+                            raise ConfigEntryAuthFailed(
+                                "Freebox application token is invalid or revoked",
+                            )
+
+                    return False
+
                 if response.status != 200:
                     return False
 
@@ -245,7 +273,8 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
                 if not data["success"]:
                     _LOGGER.warning(
-                        "Freebox /api/v4/system/ returned an unsuccessful response.",
+                        "Freebox /api/v4/system/ returned an unsuccessful "
+                        "response.",
                     )
                     return
 
@@ -336,7 +365,10 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT)
 
         try:
-            if not self.session_token and not await self._async_get_session():
+            if (
+                not self.session_token
+                and not await self._async_get_session()
+            ):
                 self._handle_failure("Unable to open a session")
 
             assert self.session_token is not None
@@ -507,6 +539,9 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                 "recent_calls": recent_calls,
                 "system": self.system_info,
             }
+
+        except ConfigEntryAuthFailed:
+            raise
 
         except (
             aiohttp.ClientError,

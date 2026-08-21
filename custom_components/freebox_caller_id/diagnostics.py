@@ -12,6 +12,7 @@ from .const import CONF_APP_TOKEN
 
 TO_REDACT = {
     CONF_APP_TOKEN,
+    CONF_HOST,
     "app_token",
     "session_token",
     "caller_number",

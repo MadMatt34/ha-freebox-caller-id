@@ -24,16 +24,21 @@
       "authorize": {
         "title": "Freebox Authorization",
         "description": "1. Go to your Freebox Server unit.\n2. Press the **right arrow** on the display to approve the access request (HA CallerID).\n3. Return here and click **Submit**.\n\n⚠️ Important: Once completed, go to Freebox OS > Settings > Access Management > Applications, and check **Access to call log** for HA CallerID."
+      },
+      "reauth_confirm": {
+        "title": "[%key:common::config_flow::title::reauth%]",
+        "description": "Freebox Caller ID needs to re-authenticate access to your Freebox."
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect to Freebox.",
-      "auth_failed": "Freebox rejected the pairing request.",
-      "pending_auth": "You have not yet approved the request on the Freebox display!",
-      "auth_denied": "Request denied or timed out."
+      "cannot_connect": "Unable to connect to the Freebox.",
+      "auth_failed": "The Freebox rejected the authorization request.",
+      "pending_auth": "The authorization has not yet been confirmed on the Freebox.",
+      "auth_denied": "The authorization request was denied or expired."
     },
     "abort": {
-      "already_configured": "This Freebox is already configured."
+      "already_configured": "This Freebox is already configured.",
+      "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]"
     }
   },
   "options": {
