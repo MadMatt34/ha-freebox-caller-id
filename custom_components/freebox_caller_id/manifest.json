@@ -8,6 +8,6 @@
   "integration_type": "hub",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/MadMatt34/ha-freebox-caller-id/issues",
-  "requirements": [],
+  "requirements": ["pytest-homeassistant-custom-component"],
   "version": "1.1.6"
 }
