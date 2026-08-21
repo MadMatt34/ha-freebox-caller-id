@@ -5,6 +5,7 @@ from __future__ import annotations
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.freebox_caller_id.const import DOMAIN
 from custom_components.freebox_caller_id.coordinator import FreeboxCallerCoordinator
@@ -111,12 +112,28 @@ async def test_device_info_updates_existing_device_metadata(
     hass: HomeAssistant,
 ) -> None:
     """Test that technical metadata is updated on an existing device."""
-    coordinator = _create_coordinator(hass)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Freebox Caller ID",
+        unique_id="test-freebox-uid",
+        data={
+            "host": FREEBOX_HOST,
+            "app_token": APP_TOKEN,
+            "scan_interval": 2,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    coordinator = _create_coordinator(
+        hass,
+        entry.entry_id,
+    )
 
     device_registry = dr.async_get(hass)
+
     device = device_registry.async_get_or_create(
-        config_entry_id=ENTRY_ID,
-        identifiers={(DOMAIN, ENTRY_ID)},
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.entry_id)},
         name="Freebox Phone",
         manufacturer="Free",
         model="Freebox Server",
