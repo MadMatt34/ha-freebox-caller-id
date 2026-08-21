@@ -1,7 +1,7 @@
 [tool.ruff]
 # Ciblage de la version Python moderne utilisée par Home Assistant
 target-version = "py312"
-line-length = 88
+line-length = 100
 
 # Dossiers à ignorer
 exclude = [
@@ -37,10 +37,15 @@ ignore = [
 # Identifie votre composant personnalisé comme module local
 known-first-party = ["custom_components.freebox_caller_id"]
 combine-as-imports = true
+force-sort-within-sections = true
 
 [tool.ruff.lint.per-file-ignores]
 # Assouplissement pour d'éventuels tests unitaires futurs
 "tests/*" = ["S101"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

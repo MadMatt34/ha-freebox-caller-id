@@ -1,4 +1,4 @@
-name: Ruff Linting
+name: Code Quality (Ruff)
 
 on:
   push:
@@ -6,7 +6,27 @@ on:
 
 jobs:
   ruff:
+    name: Ruff Check & Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/ruff-action@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Run Ruff Linter
+        run: ruff check .
+
+      - name: Run Ruff format
+        run: ruff format .
+
+      - name: Auto-commit formatted files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: auto-format avec Ruff"
