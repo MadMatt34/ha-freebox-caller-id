@@ -45,7 +45,7 @@
     "step": {
       "init": {
         "title": "Configuration Freebox Caller ID",
-        "description": "Ajustez la fréquence de balayage et la durée maximale de sonnerie active.\nUn scan trop rapide (ex: 1s) réagit plus vite mais peut surcharger la box. 2 secondes est un bon équilibre.",
+        "description": "Ajustez la fréquence de balayage et la durée maximale de sonnerie active.\nUn scan trop rapide (ex: 1s) réagit plus vite mais peut surcharger la box.\n2 secondes est la valeur par défaut afin de limiter la latence de détection de la sonnerie. Une valeur plus élevée réduit le nombre de requêtes envoyées à la Freebox au détriment de la rapidité de détection.",
         "data": {
           "scan_interval": "Fréquence de scan (en secondes)",
           "ringing_timeout": "Durée maximale de la sonnerie (en secondes)"

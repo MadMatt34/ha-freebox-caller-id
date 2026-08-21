@@ -8,7 +8,7 @@ EVENT_INCOMING_CALL = "freebox_incoming_call"
 DEFAULT_HOST = "mafreebox.freebox.fr"
 APP_ID = "fr.ha.callerid"
 APP_NAME = "HA CallerID"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.5.2"
 DEVICE_NAME = "Home Assistant"
 
 CONF_HOST = "host"
