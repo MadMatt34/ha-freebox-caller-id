@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -26,8 +27,6 @@ from custom_components.freebox_caller_id.sensor import FreeboxLastCallSensor
 
 FREEBOX_HOST = "192.168.1.254"
 APP_TOKEN = "test-app-token"
-ENTRY_ID = "test-entry-id"
-SESSION_TOKEN = "test-session-token"
 
 
 def _create_entry() -> MockConfigEntry:
@@ -68,35 +67,37 @@ async def test_sensor_setup_and_entity(
     entry.add_to_hass(hass)
 
     coordinator = _create_coordinator(hass, entry)
-    coordinator._data = {
-        "is_ringing": False,
-        "caller_name": "Jean Dupont",
-        "caller_number": "0123456789",
-        "call_type": "accepted",
-        "duration": 42,
-        "datetime": 1_700_000_000.0,
-        "id": 10,
-        "recent_calls": [
-            {
-                "id": 10,
-                "number": "0123456789",
-                "name": "Jean Dupont",
-                "type": "accepted",
-                "duration": 42,
-                "timestamp": 1_700_000_000.0,
-            }
-        ],
-        "system": {
-            "firmware_version": "4.8.1",
-            "model_info": {
-                "pretty_name": "Freebox Ultra",
+    coordinator.async_set_updated_data(
+        {
+            "is_ringing": False,
+            "caller_name": "Jean Dupont",
+            "caller_number": "0123456789",
+            "call_type": "accepted",
+            "duration": 42,
+            "datetime": 1_700_000_000.0,
+            "id": 10,
+            "recent_calls": [
+                {
+                    "id": 10,
+                    "number": "0123456789",
+                    "name": "Jean Dupont",
+                    "type": "accepted",
+                    "duration": 42,
+                    "timestamp": 1_700_000_000.0,
+                }
+            ],
+            "system": {
+                "firmware_version": "4.8.1",
+                "model_info": {
+                    "pretty_name": "Freebox Ultra",
+                },
             },
-        },
-    }
+        }
+    )
 
     entities: list[Any] = []
 
-    async def async_add_entities(new_entities: list[Any]) -> None:
+    def async_add_entities(new_entities: list[Any]) -> None:
         """Capture added entities."""
         entities.extend(new_entities)
 
@@ -145,11 +146,13 @@ async def test_sensor_uses_number_when_name_is_unknown(
     entry.add_to_hass(hass)
 
     coordinator = _create_coordinator(hass, entry)
-    coordinator._data = {
-        "caller_name": "Inconnu",
-        "caller_number": "0123456789",
-        "recent_calls": [],
-    }
+    coordinator.async_set_updated_data(
+        {
+            "caller_name": "Inconnu",
+            "caller_number": "0123456789",
+            "recent_calls": [],
+        }
+    )
 
     entity = FreeboxLastCallSensor(
         coordinator,
@@ -167,7 +170,6 @@ async def test_sensor_uses_default_when_no_data(
     entry.add_to_hass(hass)
 
     coordinator = _create_coordinator(hass, entry)
-    coordinator._data = None
 
     entity = FreeboxLastCallSensor(
         coordinator,
@@ -188,11 +190,13 @@ async def test_sensor_uses_default_when_number_is_missing(
     entry.add_to_hass(hass)
 
     coordinator = _create_coordinator(hass, entry)
-    coordinator._data = {
-        "caller_name": "Inconnu",
-        "caller_number": None,
-        "recent_calls": [],
-    }
+    coordinator.async_set_updated_data(
+        {
+            "caller_name": "Inconnu",
+            "caller_number": None,
+            "recent_calls": [],
+        }
+    )
 
     entity = FreeboxLastCallSensor(
         coordinator,
@@ -210,17 +214,19 @@ async def test_binary_sensor_setup_and_entity(
     entry.add_to_hass(hass)
 
     coordinator = _create_coordinator(hass, entry)
-    coordinator._data = {
-        "is_ringing": True,
-        "caller_name": "Jean Dupont",
-        "caller_number": "0123456789",
-        "call_type": "accepted",
-        "datetime": 1_700_000_000.0,
-    }
+    coordinator.async_set_updated_data(
+        {
+            "is_ringing": True,
+            "caller_name": "Jean Dupont",
+            "caller_number": "0123456789",
+            "call_type": "accepted",
+            "datetime": 1_700_000_000.0,
+        }
+    )
 
     entities: list[Any] = []
 
-    async def async_add_entities(new_entities: list[Any]) -> None:
+    def async_add_entities(new_entities: list[Any]) -> None:
         """Capture added entities."""
         entities.extend(new_entities)
 
@@ -239,7 +245,7 @@ async def test_binary_sensor_setup_and_entity(
     assert entity.unique_id == f"{entry.entry_id}_ringing"
     assert entity.has_entity_name is True
     assert entity.translation_key == "ringing"
-    assert entity.device_class == "sound"
+    assert entity.device_class == BinarySensorDeviceClass.SOUND
     assert entity.device_info == coordinator.device_info
 
     assert entity.is_on is True
@@ -259,7 +265,6 @@ async def test_binary_sensor_is_off_without_data(
     entry.add_to_hass(hass)
 
     coordinator = _create_coordinator(hass, entry)
-    coordinator._data = None
 
     entity = FreeboxRingingSensor(
         coordinator,
@@ -278,13 +283,15 @@ async def test_binary_sensor_is_off_when_not_ringing(
     entry.add_to_hass(hass)
 
     coordinator = _create_coordinator(hass, entry)
-    coordinator._data = {
-        "is_ringing": False,
-        "caller_name": "Jean Dupont",
-        "caller_number": "0123456789",
-        "call_type": "accepted",
-        "datetime": 1_700_000_000.0,
-    }
+    coordinator.async_set_updated_data(
+        {
+            "is_ringing": False,
+            "caller_name": "Jean Dupont",
+            "caller_number": "0123456789",
+            "call_type": "accepted",
+            "datetime": 1_700_000_000.0,
+        }
+    )
 
     entity = FreeboxRingingSensor(
         coordinator,
@@ -301,7 +308,7 @@ async def _setup_sensor(
     coordinator: FreeboxCallerCoordinator,
     async_add_entities: Any,
 ) -> None:
-    """Run the sensor platform setup with a prepared coordinator."""
+    """Run sensor platform setup with a prepared coordinator."""
     entry.runtime_data = coordinator
 
     from custom_components.freebox_caller_id import sensor
@@ -319,7 +326,7 @@ async def _setup_binary_sensor(
     coordinator: FreeboxCallerCoordinator,
     async_add_entities: Any,
 ) -> None:
-    """Run the binary sensor platform setup with a prepared coordinator."""
+    """Run binary sensor platform setup with a prepared coordinator."""
     entry.runtime_data = coordinator
 
     from custom_components.freebox_caller_id import binary_sensor
