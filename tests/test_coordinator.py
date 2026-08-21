@@ -488,11 +488,18 @@ async def test_session_expired_is_renewed(
         ringing_timeout=45,
     )
     coordinator.session_token = "expired-token"
+    coordinator.system_info = {
+        "firmware_version": FIRMWARE,
+    }
 
     data = await coordinator._async_update_data()
 
     assert coordinator.session_token == SESSION_TOKEN
-    assert data["system"] == {}
+    assert data == {
+        "system": {
+            "firmware_version": FIRMWARE,
+        },
+    }
 
 
 async def test_system_info_is_cached(

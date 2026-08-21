@@ -120,7 +120,6 @@ async def test_device_info_updates_existing_device_metadata(
         name="Freebox Phone",
         manufacturer="Free",
         model="Freebox Server",
-        area_id="area_bureau",
     )
 
     device_registry.async_update_device(
