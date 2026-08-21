@@ -1,2 +1,2 @@
 pytest
-pytest-homeassistant-custom-component
+pytest-homeassistant-custom-component==2026.8.2
