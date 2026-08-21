@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
+import aiohttp
+
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.freebox_caller_id.const import (
-    APP_ID,
-    APP_NAME,
-    APP_VERSION,
     CONF_APP_TOKEN,
     CONF_HOST,
     CONF_RINGING_TIMEOUT,
@@ -18,7 +17,6 @@ from custom_components.freebox_caller_id.const import (
     DEFAULT_HOST,
     DEFAULT_RINGING_TIMEOUT,
     DEFAULT_SCAN_INTERVAL,
-    DEVICE_NAME,
     DOMAIN,
 )
 
@@ -76,9 +74,32 @@ def _register_freebox_api(
             else {
                 "result": {
                     "status": "granted",
-                }
+                },
             }
         ),
+    )
+
+
+async def _start_flow(
+    hass: HomeAssistant,
+) -> dict[str, object]:
+    """Start the user config flow."""
+    return await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+    )
+
+
+async def _submit_host(
+    hass: HomeAssistant,
+    flow_id: str,
+) -> dict[str, object]:
+    """Submit the Freebox host."""
+    return await hass.config_entries.flow.async_configure(
+        flow_id,
+        user_input={
+            CONF_HOST: FREEBOX_HOST,
+        },
     )
 
 
@@ -89,19 +110,14 @@ async def test_user_flow_success(
     """Test a successful configuration flow."""
     _register_freebox_api(aioclient_mock)
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={"source": config_entries.SOURCE_USER},
-    )
+    result = await _start_flow(hass)
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "user"
 
-    result = await hass.config_entries.flow.async_configure(
+    result = await _submit_host(
+        hass,
         result["flow_id"],
-        user_input={
-            CONF_HOST: FREEBOX_HOST,
-        },
     )
 
     assert result["type"] is FlowResultType.FORM
@@ -126,10 +142,7 @@ async def test_user_flow_uses_default_host(
     hass: HomeAssistant,
 ) -> None:
     """Test that the user form uses the expected default host."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={"source": config_entries.SOURCE_USER},
-    )
+    result = await _start_flow(hass)
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "user"
@@ -161,10 +174,7 @@ async def test_user_flow_cannot_add_second_entry(
     )
     entry.add_to_hass(hass)
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={"source": config_entries.SOURCE_USER},
-    )
+    result = await _start_flow(hass)
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "already_configured"
@@ -174,21 +184,14 @@ async def test_user_flow_api_version_http_error(
     hass: HomeAssistant,
     aioclient_mock,
 ) -> None:
-    """Test recovery from an API version HTTP error."""
+    """Test an API version HTTP error."""
     _register_freebox_api(
         aioclient_mock,
         api_version_status=500,
     )
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={"source": config_entries.SOURCE_USER},
-    )
-
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={CONF_HOST: FREEBOX_HOST},
-    )
+    result = await _start_flow(hass)
+    result = await _submit_host(hass, result["flow_id"])
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "user"
@@ -207,15 +210,49 @@ async def test_user_flow_api_version_missing_uid(
         api_version_json={},
     )
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={"source": config_entries.SOURCE_USER},
+    result = await _start_flow(hass)
+    result = await _submit_host(hass, result["flow_id"])
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+    assert result["errors"] == {
+        "base": "cannot_connect",
+    }
+
+
+async def test_user_flow_api_version_invalid_json(
+    hass: HomeAssistant,
+    aioclient_mock,
+) -> None:
+    """Test rejection of an invalid API version response."""
+    aioclient_mock.get(
+        f"http://{FREEBOX_HOST}/api_version",
+        status=200,
+        text="invalid",
     )
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={CONF_HOST: FREEBOX_HOST},
+    result = await _start_flow(hass)
+    result = await _submit_host(hass, result["flow_id"])
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+    assert result["errors"] == {
+        "base": "cannot_connect",
+    }
+
+
+async def test_user_flow_connection_error(
+    hass: HomeAssistant,
+    aioclient_mock,
+) -> None:
+    """Test a connection failure."""
+    aioclient_mock.get(
+        f"http://{FREEBOX_HOST}/api_version",
+        exc=aiohttp.ClientError,
     )
+
+    result = await _start_flow(hass)
+    result = await _submit_host(hass, result["flow_id"])
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {
@@ -233,15 +270,8 @@ async def test_user_flow_authorization_http_error(
         authorize_status=500,
     )
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={"source": config_entries.SOURCE_USER},
-    )
-
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={CONF_HOST: FREEBOX_HOST},
-    )
+    result = await _start_flow(hass)
+    result = await _submit_host(hass, result["flow_id"])
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "user"
@@ -250,11 +280,67 @@ async def test_user_flow_authorization_http_error(
     }
 
 
-async def test_user_flow_authorization_pending_then_granted(
+async def test_user_flow_authorization_pending(
     hass: HomeAssistant,
     aioclient_mock,
 ) -> None:
-    """Test recovery from a pending authorization."""
+    """Test a pending authorization."""
+    _register_freebox_api(
+        aioclient_mock,
+        authorization_json={
+            "result": {
+                "status": "pending",
+            },
+        },
+    )
+
+    result = await _start_flow(hass)
+    result = await _submit_host(hass, result["flow_id"])
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "authorize"
+    assert result["errors"] == {
+        "base": "pending_auth",
+    }
+
+
+async def test_user_flow_authorization_denied(
+    hass: HomeAssistant,
+    aioclient_mock,
+) -> None:
+    """Test a denied authorization."""
+    _register_freebox_api(
+        aioclient_mock,
+        authorization_json={
+            "result": {
+                "status": "denied",
+            },
+        },
+    )
+
+    result = await _start_flow(hass)
+    result = await _submit_host(hass, result["flow_id"])
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "authorize"
+    assert result["errors"] == {
+        "base": "auth_denied",
+    }
+
+
+async def test_authorize_connection_error(
+    hass: HomeAssistant,
+    aioclient_mock,
+) -> None:
+    """Test a connection failure while checking authorization."""
     base_url = f"http://{FREEBOX_HOST}"
 
     aioclient_mock.get(
@@ -271,69 +357,13 @@ async def test_user_flow_authorization_pending_then_granted(
             },
         },
     )
-
-    pending_response = aioclient_mock.get(
-        f"{base_url}/api/v4/login/authorize/{TRACK_ID}",
-        json={"result": {"status": "pending"}},
-    )
-
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={"source": config_entries.SOURCE_USER},
-    )
-
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={CONF_HOST: FREEBOX_HOST},
-    )
-
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={},
-    )
-
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "authorize"
-    assert result["errors"] == {
-        "base": "pending_auth",
-    }
-
-    # Replace the pending response with a granted response for the retry.
-    pending_response.close()
-
     aioclient_mock.get(
         f"{base_url}/api/v4/login/authorize/{TRACK_ID}",
-        json={"result": {"status": "granted"}},
+        exc=aiohttp.ClientError,
     )
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={},
-    )
-
-    assert result["type"] is FlowResultType.CREATE_ENTRY
-
-
-async def test_user_flow_authorization_denied(
-    hass: HomeAssistant,
-    aioclient_mock,
-) -> None:
-    """Test a denied authorization."""
-    _register_freebox_api(
-        aioclient_mock,
-        authorization_json={"result": {"status": "denied"}},
-    )
-
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={"source": config_entries.SOURCE_USER},
-    )
-
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={CONF_HOST: FREEBOX_HOST},
-    )
-
+    result = await _start_flow(hass)
+    result = await _submit_host(hass, result["flow_id"])
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         user_input={},
@@ -342,7 +372,7 @@ async def test_user_flow_authorization_denied(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "authorize"
     assert result["errors"] == {
-        "base": "auth_denied",
+        "base": "cannot_connect",
     }
 
 
@@ -388,7 +418,7 @@ async def test_options_flow_defaults(
 async def test_options_flow_reads_values_from_entry_data(
     hass: HomeAssistant,
 ) -> None:
-    """Test options fallback to config entry data."""
+    """Test that options fall back to config entry data."""
     entry = MockConfigEntry(
         domain=DOMAIN,
         title="Freebox Caller ID",

@@ -4,19 +4,16 @@ from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from custom_components.freebox_caller_id.const import DOMAIN
 from custom_components.freebox_caller_id.coordinator import (
     FreeboxCallerCoordinator,
 )
 
-HOST = "192.168.1.254"
+FREEBOX_HOST = "192.168.1.254"
 APP_TOKEN = "test-app-token"
 ENTRY_ID = "test-entry-id"
-
-
-class FakeSession:
-    """Minimal session for DeviceInfo tests."""
 
 
 def _create_coordinator(
@@ -25,27 +22,12 @@ def _create_coordinator(
     """Create a coordinator for DeviceInfo tests."""
     return FreeboxCallerCoordinator(
         hass=hass,
-        session=FakeSession(),  # type: ignore[arg-type]
-        host=HOST,
+        session=async_get_clientsession(hass),
+        host=FREEBOX_HOST,
         app_token=APP_TOKEN,
         entry_id=ENTRY_ID,
         scan_interval=2,
         ringing_timeout=45,
-    )
-
-
-def _device_info_signature(
-    coordinator: FreeboxCallerCoordinator,
-) -> tuple[object, ...]:
-    """Return the current DeviceInfo values relevant to the tests."""
-    device_info = coordinator.device_info
-
-    return (
-        device_info["name"],
-        device_info["manufacturer"],
-        device_info["model"],
-        device_info.get("sw_version"),
-        device_info["configuration_url"],
     )
 
 
@@ -64,10 +46,10 @@ def test_default_device_info(
     assert device_info["manufacturer"] == "Free"
     assert device_info["model"] == "Freebox Server"
     assert device_info.get("sw_version") is None
-    assert device_info["configuration_url"] == f"http://{HOST}"
+    assert device_info["configuration_url"] == f"http://{FREEBOX_HOST}"
 
 
-def test_device_info_updates_from_system_info(
+def test_device_info_updates_from_model_info(
     hass: HomeAssistant,
 ) -> None:
     """Test DeviceInfo update from Freebox system information."""
@@ -92,7 +74,7 @@ def test_device_info_updates_from_system_info(
 def test_device_info_falls_back_to_board_name(
     hass: HomeAssistant,
 ) -> None:
-    """Test fallback to board_name when model_info has no model."""
+    """Test the board_name fallback."""
     coordinator = _create_coordinator(hass)
 
     coordinator.system_info = {
@@ -108,10 +90,10 @@ def test_device_info_falls_back_to_board_name(
     assert coordinator.device_info["sw_version"] == "4.8.2"
 
 
-def test_device_info_not_rebuilt_when_signature_is_unchanged(
+def test_device_info_does_not_rebuild_when_unchanged(
     hass: HomeAssistant,
 ) -> None:
-    """Test that identical system information does not rebuild DeviceInfo."""
+    """Test that an unchanged signature reuses the cached DeviceInfo."""
     coordinator = _create_coordinator(hass)
 
     coordinator.system_info = {
@@ -123,18 +105,16 @@ def test_device_info_not_rebuilt_when_signature_is_unchanged(
 
     coordinator._update_device_info()  # noqa: SLF001
     device_info = coordinator.device_info
-    signature = _device_info_signature(coordinator)
 
     coordinator._update_device_info()  # noqa: SLF001
 
     assert coordinator.device_info is device_info
-    assert _device_info_signature(coordinator) == signature
 
 
-def test_device_info_update_preserves_user_controlled_device_fields(
+def test_device_info_updates_existing_device_metadata(
     hass: HomeAssistant,
 ) -> None:
-    """Test that a technical update does not overwrite area or user name."""
+    """Test that technical metadata is updated on an existing device."""
     coordinator = _create_coordinator(hass)
 
     device_registry = dr.async_get(hass)
@@ -176,7 +156,7 @@ def test_device_info_update_preserves_user_controlled_device_fields(
 def test_device_info_is_preserved_when_system_info_is_cleared(
     hass: HomeAssistant,
 ) -> None:
-    """Test that DeviceInfo stays cached while the Freebox is unavailable."""
+    """Test that the cached DeviceInfo survives a connection loss."""
     coordinator = _create_coordinator(hass)
 
     coordinator.system_info = {
