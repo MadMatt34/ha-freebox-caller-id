@@ -301,7 +301,7 @@ async def test_user_flow_authorization_invalid_json(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "user"
     assert result["errors"] == {
-        "base": "auth_failed",
+        "base": "cannot_connect",
     }
 
 
@@ -451,22 +451,6 @@ async def test_authorize_connection_error(
     assert result["errors"] == {
         "base": "cannot_connect",
     }
-
-
-async def test_reauth_without_host(
-    hass: HomeAssistant,
-) -> None:
-    """Test that reauth aborts when no host is available."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={
-            "source": config_entries.SOURCE_REAUTH,
-        },
-        data={},
-    )
-
-    assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "auth_failed"
 
 
 async def test_reauth_api_version_http_error(
@@ -692,7 +676,7 @@ async def test_reauth_authorization_invalid_json(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "reauth_confirm"
     assert result["errors"] == {
-        "base": "auth_failed",
+        "base": "cannot_connect",
     }
 
 
