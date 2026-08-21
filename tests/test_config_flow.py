@@ -461,29 +461,6 @@ async def test_authorize_connection_error(
         "base": "cannot_connect",
     }
 
-
-async def test_authorize_http_error(
-    hass: HomeAssistant,
-) -> None:
-    """Test an HTTP error while checking authorization."""
-    flow = FreeboxCallerIDConfigFlow()
-    flow.hass = hass
-    flow.host = FREEBOX_HOST
-    flow.track_id = TRACK_ID
-
-    with (
-        patch(
-            "custom_components.freebox_caller_id.config_flow.async_get_clientsession",
-        ) as get_session,
-    ):
-        session = get_session.return_value
-        aioclient_mock = hass.data
-
-    # This branch is exercised through the public config flow below.
-    _ = session
-    _ = aioclient_mock
-
-
 async def test_reauth_without_host(
     hass: HomeAssistant,
 ) -> None:
