@@ -461,6 +461,7 @@ async def test_authorize_connection_error(
         "base": "cannot_connect",
     }
 
+
 async def test_reauth_without_host(
     hass: HomeAssistant,
 ) -> None:
