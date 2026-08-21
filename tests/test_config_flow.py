@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import aiohttp
-
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType

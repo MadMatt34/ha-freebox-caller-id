@@ -11,7 +11,6 @@ from typing import NoReturn, cast
 
 import aiohttp
 from aiohttp import ClientSession
-
 from homeassistant.config_entries import ConfigEntryAuthFailed
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
@@ -26,8 +25,8 @@ from .types import (
     CallType,
     FreeboxAuthenticationErrorResponse,
     FreeboxCall,
-    FreeboxCallLogResponse,
     FreeboxCallerData,
+    FreeboxCallLogResponse,
     FreeboxChallengeResult,
     FreeboxIncomingCallEvent,
     FreeboxLoginResponse,

@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 import logging
-from typing import Mapping, cast
+from collections.abc import Mapping
+from typing import cast
 
 import aiohttp
-import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+import voluptuous as vol
 
 from .const import (
     APP_ID,

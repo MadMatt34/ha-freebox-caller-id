@@ -6,12 +6,11 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
-import pytest
-
 from homeassistant.config_entries import ConfigEntryAuthFailed
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import UpdateFailed
+import pytest
 
 from custom_components.freebox_caller_id.const import EVENT_INCOMING_CALL
 from custom_components.freebox_caller_id.coordinator import (

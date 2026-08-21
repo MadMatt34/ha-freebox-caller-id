@@ -8,7 +8,7 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.core import HomeAssistant
 
 from . import FreeboxConfigEntry
-from .const import CONF_APP_TOKEN
+from .const import CONF_APP_TOKEN, CONF_HOST
 
 TO_REDACT = {
     CONF_APP_TOKEN,
