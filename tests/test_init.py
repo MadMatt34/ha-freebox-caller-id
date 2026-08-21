@@ -175,9 +175,7 @@ async def test_async_setup_entry_propagates_config_entry_not_ready(
     entry.add_to_hass(hass)
 
     coordinator = _create_coordinator()
-    coordinator.async_config_entry_first_refresh.side_effect = (
-        ConfigEntryNotReady
-    )
+    coordinator.async_config_entry_first_refresh.side_effect = ConfigEntryNotReady
 
     with (
         patch(
