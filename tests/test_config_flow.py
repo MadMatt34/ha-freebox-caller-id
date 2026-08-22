@@ -8,7 +8,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.freebox_caller_id.config_flow import FreeboxCallerIDConfigFlow
 from custom_components.freebox_caller_id.const import (
+    APP_ID,
+    APP_NAME,
+    APP_VERSION,
     CONF_APP_TOKEN,
     CONF_HOST,
     CONF_RINGING_TIMEOUT,
@@ -16,6 +20,7 @@ from custom_components.freebox_caller_id.const import (
     DEFAULT_HOST,
     DEFAULT_RINGING_TIMEOUT,
     DEFAULT_SCAN_INTERVAL,
+    DEVICE_NAME,
     DOMAIN,
 )
 
@@ -43,7 +48,11 @@ def _register_freebox_api(
     aioclient_mock.get(
         f"{base_url}/api_version",
         status=api_version_status,
-        json=(api_version_json if api_version_json is not None else {"uid": FREEBOX_UID}),
+        json=(
+            api_version_json
+            if api_version_json is not None
+            else {"uid": FREEBOX_UID}
+        ),
     )
 
     aioclient_mock.post(
@@ -160,7 +169,11 @@ async def test_user_flow_uses_default_host(
 
     schema = result["data_schema"].schema
 
-    host_key = next(key for key in schema if getattr(key, "schema", None) == CONF_HOST)
+    host_key = next(
+        key
+        for key in schema
+        if getattr(key, "schema", None) == CONF_HOST
+    )
 
     assert host_key.default() == DEFAULT_HOST
 
@@ -910,6 +923,178 @@ async def test_reauth_flow_connection_error(
     assert result["errors"] == {
         "base": "cannot_connect",
     }
+
+
+async def test_reauth_entry_data_without_host_aborts(
+    hass: HomeAssistant,
+) -> None:
+    """Test reauth aborts when the entry has no valid host."""
+    flow = FreeboxCallerIDConfigFlow()
+    flow.hass = hass
+
+    result = await flow.async_step_reauth(
+        {
+            CONF_HOST: "",
+        },
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "auth_failed"
+
+
+async def test_reauth_confirm_without_host_aborts(
+    hass: HomeAssistant,
+) -> None:
+    """Test reauth confirmation without a host."""
+    flow = FreeboxCallerIDConfigFlow()
+    flow.hass = hass
+    flow.host = None
+
+    result = await flow.async_step_reauth_confirm(
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "auth_failed"
+
+
+async def test_reauth_step_with_host_shows_confirmation(
+    hass: HomeAssistant,
+) -> None:
+    """Test reauth forwards valid entry data to confirmation."""
+    flow = FreeboxCallerIDConfigFlow()
+    flow.hass = hass
+
+    result = await flow.async_step_reauth(
+        {
+            CONF_HOST: FREEBOX_HOST,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reauth_confirm"
+
+
+async def test_authorize_without_host_aborts(
+    hass: HomeAssistant,
+) -> None:
+    """Test authorization without a host."""
+    flow = FreeboxCallerIDConfigFlow()
+    flow.hass = hass
+    flow.host = None
+    flow.track_id = TRACK_ID
+    flow.context = {
+        "source": config_entries.SOURCE_USER,
+    }
+
+    result = await flow.async_step_authorize(
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "auth_failed"
+
+
+async def test_authorize_without_track_id_aborts(
+    hass: HomeAssistant,
+) -> None:
+    """Test authorization without a track ID."""
+    flow = FreeboxCallerIDConfigFlow()
+    flow.hass = hass
+    flow.host = FREEBOX_HOST
+    flow.track_id = None
+    flow.context = {
+        "source": config_entries.SOURCE_USER,
+    }
+
+    result = await flow.async_step_authorize(
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "auth_failed"
+
+
+async def test_authorize_form_contains_host_placeholder(
+    hass: HomeAssistant,
+) -> None:
+    """Test authorization form placeholders."""
+    flow = FreeboxCallerIDConfigFlow()
+    flow.hass = hass
+    flow.host = FREEBOX_HOST
+    flow.track_id = TRACK_ID
+
+    result = await flow.async_step_authorize()
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "authorize"
+    assert result["description_placeholders"] == {
+        "host": FREEBOX_HOST,
+    }
+
+
+async def test_authorize_granted_without_app_token_aborts(
+    hass: HomeAssistant,
+    aioclient_mock,
+) -> None:
+    """Test granted authorization without an app token."""
+    flow = FreeboxCallerIDConfigFlow()
+    flow.hass = hass
+    flow.host = FREEBOX_HOST
+    flow.track_id = TRACK_ID
+    flow.app_token = None
+    flow._unique_id = FREEBOX_UID
+    flow.context = {
+        "source": config_entries.SOURCE_USER,
+    }
+
+    aioclient_mock.get(
+        f"http://{FREEBOX_HOST}/api/v4/login/authorize/{TRACK_ID}",
+        json={
+            "result": {
+                "status": "granted",
+            },
+        },
+    )
+
+    result = await flow.async_step_authorize(
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "auth_failed"
+
+
+async def test_authorize_granted_without_unique_id_aborts(
+    hass: HomeAssistant,
+    aioclient_mock,
+) -> None:
+    """Test granted authorization without a unique ID."""
+    flow = FreeboxCallerIDConfigFlow()
+    flow.hass = hass
+    flow.host = FREEBOX_HOST
+    flow.track_id = TRACK_ID
+    flow.app_token = APP_TOKEN
+    flow._unique_id = None
+    flow.context = {
+        "source": config_entries.SOURCE_USER,
+    }
+
+    aioclient_mock.get(
+        f"http://{FREEBOX_HOST}/api/v4/login/authorize/{TRACK_ID}",
+        json={
+            "result": {
+                "status": "granted",
+            },
+        },
+    )
+
+    result = await flow.async_step_authorize(
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "auth_failed"
 
 
 async def test_options_flow_defaults(
