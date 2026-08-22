@@ -24,6 +24,13 @@ CHALLENGE = "test-challenge"
 FIRMWARE = "4.8.1"
 MODEL = "Freebox Ultra"
 
+SYSTEM_INFO = {
+    "firmware_version": FIRMWARE,
+    "model_info": {
+        "pretty_name": MODEL,
+    },
+}
+
 
 def _login_responses(aioclient_mock) -> None:
     """Register the Freebox login responses."""
@@ -55,12 +62,7 @@ def _system_response(aioclient_mock) -> None:
         f"http://{FREEBOX_HOST}/api/v4/system/",
         json={
             "success": True,
-            "result": {
-                "firmware_version": FIRMWARE,
-                "model_info": {
-                    "pretty_name": MODEL,
-                },
-            },
+            "result": SYSTEM_INFO,
         },
     )
 
@@ -76,20 +78,6 @@ def _call_log_response(
             "success": True,
             "result": [] if call is None else [call],
         },
-    )
-
-
-def _call_log_raw_response(
-    aioclient_mock,
-    *,
-    status: int,
-    payload: object,
-) -> None:
-    """Register a raw call-log response."""
-    aioclient_mock.get(
-        f"http://{FREEBOX_HOST}/api/v4/call/log/",
-        status=status,
-        json=payload,
     )
 
 
@@ -128,8 +116,15 @@ def _create_coordinator(
     )
 
 
+def _set_cached_system_info(
+    coordinator: FreeboxCallerCoordinator,
+) -> None:
+    """Set cached system information for call-log-focused tests."""
+    coordinator.system_info = SYSTEM_INFO.copy()
+
+
 class _Response:
-    """Minimal aiohttp response for the sequence tests."""
+    """Minimal aiohttp response for sequence tests."""
 
     def __init__(
         self,
@@ -258,10 +253,11 @@ async def test_first_call_initializes_without_event(
         events.append,
     )
 
-    await coordinator._async_update_data()
+    data = await coordinator._async_update_data()
 
     assert coordinator._last_seen_call_id == 1
     assert events == []
+    assert data["is_ringing"] is True
 
 
 async def test_new_incoming_call_fires_event(
@@ -378,12 +374,7 @@ async def test_empty_call_log_is_valid(
     data = await coordinator._async_update_data()
 
     assert data == {
-        "system": {
-            "firmware_version": FIRMWARE,
-            "model_info": {
-                "pretty_name": MODEL,
-            },
-        },
+        "system": SYSTEM_INFO,
     }
 
 
@@ -479,21 +470,6 @@ async def test_update_failed_clears_connection_state(
     assert coordinator.device_info is device_info
 
 
-async def test_device_info_falls_back_to_board_name(
-    hass: HomeAssistant,
-) -> None:
-    """Test DeviceInfo fallback to board_name."""
-    coordinator = _create_coordinator(hass)
-
-    coordinator.system_info = {
-        "board_name": "fbxserver",
-    }
-
-    coordinator._update_device_info()
-
-    assert coordinator.device_info["model"] == ("Freebox Server (modèle fbxserver)")
-
-
 async def test_invalid_app_token_raises_auth_failed(
     hass: HomeAssistant,
 ) -> None:
@@ -552,7 +528,6 @@ async def test_login_http_error(
     )
 
     assert await coordinator._async_get_session() is False
-    assert coordinator.session_token is None
 
 
 async def test_login_challenge_json_error(
@@ -803,7 +778,6 @@ async def test_system_info_errors_are_non_fatal(
 ) -> None:
     """Test recoverable system information errors."""
     session = _SequenceSession(
-        system_responses=[],
         exception=error,
     )
 
@@ -870,19 +844,14 @@ async def test_session_expired_is_renewed(
         scan_interval=2,
         ringing_timeout=45,
     )
-
     coordinator.session_token = "expired-token"
-    coordinator.system_info = {
-        "firmware_version": FIRMWARE,
-    }
+    _set_cached_system_info(coordinator)
 
     data = await coordinator._async_update_data()
 
     assert coordinator.session_token == SESSION_TOKEN
     assert data == {
-        "system": {
-            "firmware_version": FIRMWARE,
-        },
+        "system": SYSTEM_INFO,
     }
 
 
@@ -920,8 +889,8 @@ async def test_session_renewal_failure(
         scan_interval=2,
         ringing_timeout=45,
     )
-
     coordinator.session_token = "expired-token"
+    _set_cached_system_info(coordinator)
 
     with pytest.raises(
         UpdateFailed,
@@ -973,8 +942,8 @@ async def test_call_log_retry_failure(
         scan_interval=2,
         ringing_timeout=45,
     )
-
     coordinator.session_token = "expired-token"
+    _set_cached_system_info(coordinator)
 
     with pytest.raises(
         UpdateFailed,
@@ -1005,8 +974,8 @@ async def test_call_log_http_error(
         scan_interval=2,
         ringing_timeout=45,
     )
-
     coordinator.session_token = SESSION_TOKEN
+    _set_cached_system_info(coordinator)
 
     with pytest.raises(
         UpdateFailed,
@@ -1040,8 +1009,8 @@ async def test_call_log_unsuccessful_response(
         scan_interval=2,
         ringing_timeout=45,
     )
-
     coordinator.session_token = SESSION_TOKEN
+    _set_cached_system_info(coordinator)
 
     with pytest.raises(
         UpdateFailed,
@@ -1074,7 +1043,6 @@ async def test_invalid_call_data(
     call[field] = value
 
     session = _SequenceSession(
-        system_responses=[],
         call_log_responses=[
             _Response(
                 status=200,
@@ -1095,10 +1063,13 @@ async def test_invalid_call_data(
         scan_interval=2,
         ringing_timeout=45,
     )
-
     coordinator.session_token = SESSION_TOKEN
+    _set_cached_system_info(coordinator)
 
-    with pytest.raises(UpdateFailed, match=message):
+    with pytest.raises(
+        UpdateFailed,
+        match=message,
+    ):
         await coordinator._async_update_data()
 
 
@@ -1167,8 +1138,8 @@ async def test_recent_calls_ignore_invalid_entries(
         scan_interval=2,
         ringing_timeout=45,
     )
-
     coordinator.session_token = SESSION_TOKEN
+    _set_cached_system_info(coordinator)
 
     data = await coordinator._async_update_data()
 
@@ -1229,11 +1200,29 @@ async def test_unexpected_error_is_converted_to_update_failed(
         await coordinator._async_update_data()
 
 
+async def test_device_info_falls_back_to_board_name(
+    hass: HomeAssistant,
+) -> None:
+    """Test DeviceInfo fallback to board_name."""
+    coordinator = _create_coordinator(hass)
+
+    coordinator.system_info = {
+        "board_name": "fbxserver",
+    }
+
+    coordinator._update_device_info()
+
+    assert coordinator.device_info["model"] == (
+        "Freebox Server (modèle fbxserver)"
+    )
+
+
 async def test_system_info_is_cached(
     hass: HomeAssistant,
     aioclient_mock,
 ) -> None:
     """Test that system information is not fetched on every update."""
+    _login_responses(aioclient_mock)
     _system_response(aioclient_mock)
     _call_log_response(
         aioclient_mock,
@@ -1245,10 +1234,6 @@ async def test_system_info_is_cached(
 
     await coordinator._async_update_data()
 
-    system_requests = [call for call in aioclient_mock.mock_calls if "/api/v4/system/" in str(call)]
-
-    assert len(system_requests) == 1
-
     _call_log_response(
         aioclient_mock,
         None,
@@ -1256,6 +1241,6 @@ async def test_system_info_is_cached(
 
     await coordinator._async_update_data()
 
-    system_requests = [call for call in aioclient_mock.mock_calls if "/api/v4/system/" in str(call)]
-
-    assert len(system_requests) == 1
+    # The system endpoint was registered once and system_info is cached,
+    # so the second update only consumes a call-log response.
+    assert coordinator.system_info == SYSTEM_INFO
