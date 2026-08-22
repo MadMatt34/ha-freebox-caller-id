@@ -1,11 +1,14 @@
 # Freebox Caller ID - Intégration pour Home Assistant
 
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
 [![Latest Release](https://img.shields.io/github/v/release/MadMatt34/ha-freebox-caller-id?color=green)](https://github.com/MadMatt34/ha-freebox-caller-id/releases)
-![Installs](https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=Installations&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha-freebox-caller-id.total)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
+[![HACS](https://img.shields.io/badge/HACS-Default-blue)](https://github.com/hacs/default)
+![Installs](https://img.shields.io/badge/dynamic/json?label=Installations&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha-freebox-caller-id.total)
 \
 [![HACS Check](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hacs.yml)
 [![Hassfest Check](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hassfest.yml)
+[![Tests](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/tests.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/tests.yml)
+[![Coverage](https://img.shields.io/badge/coverage-%3E95%25-brightgreen)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/tests.yml)
 
 ![Freebox Caller ID for Home Assistant](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/logo.png)
 
