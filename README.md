@@ -2,13 +2,14 @@
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
 [![Latest Release](https://img.shields.io/github/v/release/MadMatt34/ha-freebox-caller-id?color=green)](https://github.com/MadMatt34/ha-freebox-caller-id/releases)
-
+![Installs](https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=Installations&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha-freebox-caller-id.total)
+\
 [![HACS Check](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hacs.yml)
 [![Hassfest Check](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hassfest.yml)
 
 ![Freebox Caller ID for Home Assistant](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/logo.png)
 
-[🇫🇷 README en FRANCAIS 🇫🇷](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/README.fr.md)
+[❗README en FRANCAIS 🇫🇷 ❗](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/README.fr.md)
 
 **Freebox Caller ID** is a custom Home Assistant integration designed to detect incoming calls on your [Freebox](https://www.free.fr/freebox) landline **in real-time**, without requiring any additional hardware.
 
@@ -297,7 +298,16 @@ If your Freebox reboots or undergoes a firmware update:
 - Verify that your Freebox is accessible on your local network.
 - Ensure Home Assistant can reach the Freebox host IP.
 - Check logs: **Settings → System → Logs**.
-- Diagnostics & Privacy: You can safely export diagnostic files when opening an issue on GitHub. Access tokens, credentials, and sensitive personal data (such as phone numbers and contact names) are automatically anonymized.
+
+> [!NOTE]
+> **Diagnostics & Privacy:**\
+> You can safely export diagnostic files when opening an issue on GitHub. Access tokens, credentials, and sensitive personal data (such as phone numbers and contact names) are automatically anonymized.
+
+---
+
+## 🌐 Supported Languages
+
+🇬🇧 English • 🇫🇷 Français
 
 ---
 
