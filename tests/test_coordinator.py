@@ -491,9 +491,7 @@ async def test_device_info_falls_back_to_board_name(
 
     coordinator._update_device_info()
 
-    assert coordinator.device_info["model"] == (
-        "Freebox Server (modèle fbxserver)"
-    )
+    assert coordinator.device_info["model"] == ("Freebox Server (modèle fbxserver)")
 
 
 async def test_invalid_app_token_raises_auth_failed(
@@ -1190,6 +1188,7 @@ async def test_unexpected_error_is_converted_to_update_failed(
     hass: HomeAssistant,
 ) -> None:
     """Test unexpected exceptions are converted to UpdateFailed."""
+
     class BrokenSession:
         """Session raising an unexpected exception."""
 
@@ -1246,11 +1245,7 @@ async def test_system_info_is_cached(
 
     await coordinator._async_update_data()
 
-    system_requests = [
-        call
-        for call in aioclient_mock.mock_calls
-        if "/api/v4/system/" in str(call)
-    ]
+    system_requests = [call for call in aioclient_mock.mock_calls if "/api/v4/system/" in str(call)]
 
     assert len(system_requests) == 1
 
@@ -1261,10 +1256,6 @@ async def test_system_info_is_cached(
 
     await coordinator._async_update_data()
 
-    system_requests = [
-        call
-        for call in aioclient_mock.mock_calls
-        if "/api/v4/system/" in str(call)
-    ]
+    system_requests = [call for call in aioclient_mock.mock_calls if "/api/v4/system/" in str(call)]
 
     assert len(system_requests) == 1
