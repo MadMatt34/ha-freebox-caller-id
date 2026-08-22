@@ -10,9 +10,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.freebox_caller_id.config_flow import FreeboxCallerIDConfigFlow
 from custom_components.freebox_caller_id.const import (
-    APP_ID,
-    APP_NAME,
-    APP_VERSION,
     CONF_APP_TOKEN,
     CONF_HOST,
     CONF_RINGING_TIMEOUT,
@@ -20,7 +17,6 @@ from custom_components.freebox_caller_id.const import (
     DEFAULT_HOST,
     DEFAULT_RINGING_TIMEOUT,
     DEFAULT_SCAN_INTERVAL,
-    DEVICE_NAME,
     DOMAIN,
 )
 

@@ -13,19 +13,47 @@
   },
   "config": {
     "step": {
+      "user": {
+        "title": "Connect to Freebox",
+        "description": "Enter your Freebox address. If you haven't changed it, leave the default value.",
+        "data": {
+          "host": "Address (e.g., mafreebox.freebox.fr)"
+        }
+      },
+      "authorize": {
+        "title": "Freebox Authorization",
+        "description": "1. Go to your Freebox Server unit.\n2. Press the **right arrow** on the display to approve the access request (HA CallerID).\n3. Return here and click **Submit**.\n\n⚠️ Important: Once completed, go to Freebox OS > Settings > Access Management > Applications, and check **Access to call log** for HA CallerID."
+      },
       "reauth_confirm": {
         "title": "[%key:common::config_flow::title::reauth%]",
         "description": "Freebox Caller ID needs to re-authenticate access to your Freebox."
       }
-    },
-    "abort": {
-      "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]"
     },
     "error": {
       "cannot_connect": "Unable to connect to the Freebox.",
       "auth_failed": "The Freebox rejected the authorization request.",
       "pending_auth": "The authorization has not yet been confirmed on the Freebox.",
       "auth_denied": "The authorization request was denied or expired."
+    },
+    "abort": {
+      "already_configured": "This Freebox is already configured.",
+      "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Freebox Caller ID Options",
+        "description": "Adjust polling frequency and ringing timeout.",
+        "data": {
+          "scan_interval": "Scan interval (in seconds)",
+          "ringing_timeout": "Maximum ringing duration (in seconds)"
+        },
+        "data_description": {
+          "scan_interval": "A polling interval that is too fast (e.g. 1s) responds quicker but may overload the box.\n2 seconds is the default value in order to limit the ring-detection latency. A higher value reduces the number of requests sent to the Freebox, at the expense of detection speed.",
+          "ringing_timeout": "Sets the 'ringing' sensor activation duration; defaults to 45s. Answering the phone overrides this setting."
+        }
+      }
     }
   }
 }
