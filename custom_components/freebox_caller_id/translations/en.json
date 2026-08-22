@@ -17,8 +17,7 @@
         "title": "Connect to Freebox",
         "description": "Enter your Freebox address. If you haven't changed it, leave the default value.",
         "data": {
-          "host": "Address (e.g., mafreebox.freebox.fr)",
-          "area": "Area to use (e.g., office)"
+          "host": "Address (e.g., mafreebox.freebox.fr)"
         }
       },
       "authorize": {
@@ -45,10 +44,14 @@
     "step": {
       "init": {
         "title": "Freebox Caller ID Options",
-        "description": "Adjust polling frequency and ringing timeout.\nA polling interval that is too fast (e.g. 1s) responds quicker but may overload the box.\n2 seconds is the default value in order to limit the ring-detection latency. A higher value reduces the number of requests sent to the Freebox, at the expense of detection speed.",
+        "description": "Adjust polling frequency and ringing timeout.",
         "data": {
           "scan_interval": "Scan interval (in seconds)",
           "ringing_timeout": "Maximum ringing duration (in seconds)"
+        },
+        "data_description": {
+          "startup_delay": "A polling interval that is too fast (e.g. 1s) responds quicker but may overload the box.\n2 seconds is the default value in order to limit the ring-detection latency. A higher value reduces the number of requests sent to the Freebox, at the expense of detection speed.",
+          "ringing_timeout": "Sets the 'ringing' sensor activation duration; defaults to 45s. Answering the phone overrides this setting."
         }
       }
     }

@@ -17,8 +17,7 @@
         "title": "Connexion à la Freebox",
         "description": "Entrez l'adresse de votre Freebox. Si vous ne l'avez pas changée, laissez la valeur par défaut.",
         "data": {
-          "host": "Adresse (ex: mafreebox.freebox.fr)",
-          "area": "Zone à utiliser (ex: Bureau)"
+          "host": "Adresse (ex: mafreebox.freebox.fr)"
         }
       },
       "authorize": {
@@ -45,10 +44,14 @@
     "step": {
       "init": {
         "title": "Configuration Freebox Caller ID",
-        "description": "Ajustez la fréquence de balayage et la durée maximale de sonnerie active.\nUn scan trop rapide (ex: 1s) réagit plus vite mais peut surcharger la box.\n2 secondes est la valeur par défaut afin de limiter la latence de détection de la sonnerie. Une valeur plus élevée réduit le nombre de requêtes envoyées à la Freebox au détriment de la rapidité de détection.",
+        "description": "Ajustez la fréquence de balayage et la durée maximale de sonnerie active.",
         "data": {
           "scan_interval": "Fréquence de scan (en secondes)",
           "ringing_timeout": "Durée maximale de la sonnerie (en secondes)"
+        },
+        "data_description": {
+          "startup_delay": "Un scan trop rapide (ex: 1s) réagit plus vite mais peut surcharger la box.\n2 secondes est la valeur par défaut afin de limiter la latence de détection de la sonnerie. Une valeur plus élevée réduit le nombre de requêtes envoyées à la Freebox au détriment de la rapidité de détection.",
+          "ringing_timeout": "Définit le durée d'activation du capteur 'sonnerie' ; 45s par défaut. Un décroché du téléphone est prédominant sur cette valeur."
         }
       }
     }
