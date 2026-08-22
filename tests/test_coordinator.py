@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+import time
 from typing import Any
 
 import aiohttp
@@ -242,6 +243,7 @@ async def test_first_call_initializes_without_event(
             call_id=1,
             call_type="accepted",
             duration=0,
+            datetime=time.time(),
         ),
     )
 
