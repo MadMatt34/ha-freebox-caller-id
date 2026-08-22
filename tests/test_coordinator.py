@@ -1212,9 +1212,7 @@ async def test_device_info_falls_back_to_board_name(
 
     coordinator._update_device_info()
 
-    assert coordinator.device_info["model"] == (
-        "Freebox Server (modèle fbxserver)"
-    )
+    assert coordinator.device_info["model"] == ("Freebox Server (modèle fbxserver)")
 
 
 async def test_system_info_is_cached(
