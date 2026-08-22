@@ -32,7 +32,8 @@ This integration performs fast, asynchronous HTTP polling (every 2 seconds by de
 
 ### Option 1: HACS Installation (Custom Repository - 📌 Recommended)
 
-1. Open **HACS** in Home Assistant.
+1. Open **HACS** in Home Assistant.\
+    [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=MadMatt34&repository=ha-freebox-caller-id&category=integration)
 2. Click **Custom Repositories** (top right menu).
 3. Add: `https://github.com/MadMatt34/ha-freebox-caller-id`
 4. Select category: **Integration**.

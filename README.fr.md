@@ -32,7 +32,8 @@ Cette intégration effectue un scan HTTP rapide et asynchrone (polling toutes le
 
 ### Option 1 : Installation via HACS (dépôt personnalisé - 📌 recommandée)
 
-1. Ouvrir **HACS**  
+1. Ouvrir **HACS**\
+    [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=MadMatt34&repository=ha-freebox-caller-id&category=integration)
 2. Cliquer sur les 3 points en haut à droite > **Dépôts personnalisés**.
 3. Ajouter : `https://github.com/MadMatt34/ha-freebox-caller-id`
 4. Choisir la catégorie **Intégration** et valider
