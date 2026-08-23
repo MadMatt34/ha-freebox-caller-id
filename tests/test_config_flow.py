@@ -1,7 +1,8 @@
 """Tests for the Freebox Caller ID config flow."""
 
 from __future__ import annotations
-from unittest.mock import AsyncMock, MagicMock, patch
+
+from unittest.mock import AsyncMock, patch
 
 import aiohttp
 from homeassistant import config_entries
