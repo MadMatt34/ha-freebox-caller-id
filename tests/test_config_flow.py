@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
-
 import aiohttp
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
