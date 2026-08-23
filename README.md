@@ -2,6 +2,7 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/MadMatt34/ha-freebox-caller-id?color=green)](https://github.com/MadMatt34/ha-freebox-caller-id/releases)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
+[![Quality scale](https://img.shields.io/badge/Quality%20scale-silver-silver)](https://www.home-assistant.io/docs/quality_scale/#-silver)
 [![HACS](https://img.shields.io/badge/HACS-Default-blue)](https://github.com/hacs/default)
 ![Installs](https://img.shields.io/badge/dynamic/json?label=Installations&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha-freebox-caller-id.total)
 \
