@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, TypedDict
+from typing import Literal, NotRequired, TypedDict
 
 CallType = Literal["accepted", "missed", "outgoing"]
 
@@ -74,10 +74,17 @@ class FreeboxChallengeResult(TypedDict):
     challenge: str
 
 
+class FreeboxSessionPermissions(TypedDict, total=False):
+    """Permissions granted to the Freebox application."""
+
+    contacts: bool
+
+
 class FreeboxSessionResult(TypedDict):
     """Result of opening a Freebox session."""
 
     session_token: str
+    permissions: NotRequired[FreeboxSessionPermissions]
 
 
 class FreeboxLoginResponse(TypedDict):
@@ -100,6 +107,58 @@ class FreeboxSessionResponse(TypedDict):
 
     success: bool
     result: FreeboxSessionResult
+
+
+class FreeboxContactNumber(TypedDict, total=False):
+    """Phone number associated with a Freebox contact."""
+
+    number: str
+    type: str
+    label: str
+
+
+class FreeboxContact(TypedDict, total=False):
+    """Contact returned by the Freebox API."""
+
+    id: int
+    display_name: str
+    first_name: str
+    last_name: str
+    company: str
+    numbers: list[FreeboxContactNumber]
+
+
+class FreeboxContactsResponse(TypedDict):
+    """Freebox response containing contacts."""
+
+    success: bool
+    result: list[FreeboxContact]
+
+
+class FreeboxContactNumberResult(TypedDict, total=False):
+    """Phone number included in a contact lookup result."""
+
+    number: str
+    type: str
+    label: str
+
+
+class FreeboxContactResult(TypedDict, total=False):
+    """Sanitized contact included in a lookup response."""
+
+    id: int
+    display_name: str
+    first_name: str
+    last_name: str
+    company: str
+    numbers: list[FreeboxContactNumberResult]
+    matched_number: str
+
+
+class FreeboxContactLookupResponse(TypedDict):
+    """Response returned by a contact lookup action."""
+
+    matches: list[FreeboxContactResult]
 
 
 class FreeboxSystemResponse(TypedDict):

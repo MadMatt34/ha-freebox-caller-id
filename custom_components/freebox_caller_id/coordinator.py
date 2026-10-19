@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import timedelta
 import hashlib
 import hmac
@@ -23,6 +24,8 @@ from homeassistant.helpers.update_coordinator import (
 from .const import APP_ID, DOMAIN, EVENT_INCOMING_CALL
 from .types import (
     CallType,
+    FreeboxContact,
+    FreeboxSessionPermissions,
     FreeboxCall,
     FreeboxCallerData,
     FreeboxCallLogResponse,
@@ -39,6 +42,14 @@ from .types import (
 _LOGGER = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT = 5
+
+
+class FreeboxContactPermissionError(Exception):
+    """Raised when the application cannot access the Freebox contacts."""
+
+
+class FreeboxContactApiError(Exception):
+    """Raised when the Freebox contacts API cannot be queried."""
 
 
 class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
@@ -70,6 +81,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         self.ringing_timeout = ringing_timeout
 
         self.session_token: str | None = None
+        self.permissions: FreeboxSessionPermissions | None = None
         self.system_info: FreeboxSystemInfo = {}
         self._device_info = self._create_default_device_info()
         self._device_info_signature: tuple[str, str | None] = (
@@ -219,6 +231,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                     return False
 
                 self.session_token = data["result"]["session_token"]
+                self.permissions = data["result"].get("permissions")
                 return True
 
         except (
@@ -292,6 +305,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
     def _handle_failure(self, reason: str) -> NoReturn:
         """Handle a failed update."""
         self.session_token = None
+        self.permissions = None
 
         # Force system information to be refreshed after the Freebox
         # comes back online.
@@ -350,6 +364,115 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             EVENT_INCOMING_CALL,
             event_data,
         )
+
+
+    async def async_get_contacts(self) -> list[FreeboxContact]:
+        """Fetch contacts from the Freebox on demand."""
+        if not self.session_token and not await self._async_get_session():
+            raise FreeboxContactApiError("Unable to open a Freebox session")
+
+        # Refresh once so permission changes made in Freebox OS can take
+        # effect without requiring a Home Assistant restart.
+        if self.permissions is not None and not self.permissions.get("contacts", False):
+            self.session_token = None
+            self.permissions = None
+            if not await self._async_get_session():
+                raise FreeboxContactApiError("Unable to refresh Freebox permissions")
+
+            if self.permissions is not None and not self.permissions.get("contacts", False):
+                raise FreeboxContactPermissionError
+
+        return await self._async_fetch_contacts(retry=True)
+
+    async def _async_fetch_contacts(self, *, retry: bool) -> list[FreeboxContact]:
+        """Fetch contacts and distinguish permission failures from session expiry."""
+        if self.session_token is None:
+            raise FreeboxContactApiError("No authenticated Freebox session")
+
+        timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT)
+        headers = {"X-Fbx-App-Auth": self.session_token}
+
+        try:
+            async with self.session.get(
+                f"http://{self.host}/api/v4/contact/",
+                headers=headers,
+                params={"limit": -1},
+                timeout=timeout,
+            ) as response:
+                try:
+                    raw_data = await response.json()
+                except (ValueError, TypeError) as err:
+                    raise FreeboxContactApiError(
+                        "Invalid response from the Freebox contacts API"
+                    ) from err
+
+                if response.status == 403:
+                    error_code = (
+                        raw_data.get("error_code")
+                        if isinstance(raw_data, Mapping)
+                        else None
+                    )
+
+                    if error_code == "insufficient_rights":
+                        raise FreeboxContactPermissionError
+
+                    if retry and error_code in ("auth_required", "invalid_token"):
+                        self.session_token = None
+                        self.permissions = None
+                        if not await self._async_get_session():
+                            raise FreeboxContactApiError(
+                                "Unable to renew the Freebox session"
+                            )
+
+                        if (
+                            self.permissions is not None
+                            and not self.permissions.get("contacts", False)
+                        ):
+                            raise FreeboxContactPermissionError
+
+                        return await self._async_fetch_contacts(retry=False)
+
+                    raise FreeboxContactApiError(
+                        f"Freebox contacts API returned HTTP 403 ({error_code or 'unknown error'})"
+                    )
+
+                if response.status != 200:
+                    raise FreeboxContactApiError(
+                        f"Freebox contacts API returned HTTP {response.status}"
+                    )
+
+                if (
+                    not isinstance(raw_data, Mapping)
+                    or raw_data.get("success") is not True
+                ):
+                    raise FreeboxContactApiError(
+                        "Freebox contacts API returned an unsuccessful response"
+                    )
+
+                raw_contacts = raw_data.get("result")
+                if not isinstance(raw_contacts, list):
+                    raise FreeboxContactApiError(
+                        "Freebox contacts API returned an invalid contact list"
+                    )
+
+                return [
+                    cast(FreeboxContact, contact)
+                    for contact in raw_contacts
+                    if isinstance(contact, Mapping)
+                ]
+
+        except (FreeboxContactApiError, FreeboxContactPermissionError):
+            raise
+        except (
+            aiohttp.ClientError,
+            TimeoutError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as err:
+            raise FreeboxContactApiError(
+                "Communication with the Freebox contacts API failed"
+            ) from err
 
     async def _async_update_data(self) -> FreeboxCallerData:
         """Fetch the latest data from the Freebox."""
