@@ -1,6 +1,6 @@
 [tool.ruff]
 # Ciblage de la version Python moderne utilisée par Home Assistant
-target-version = "py312"
+target-version = "py314"
 line-length = 100
 
 # Dossiers à ignorer

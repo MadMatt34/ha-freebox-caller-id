@@ -86,12 +86,13 @@ class FreeboxLoginResponse(TypedDict):
     result: FreeboxChallengeResult
 
 
-class FreeboxAuthenticationErrorResponse(TypedDict, total=False):
-    """Freebox authentication error response."""
+class FreeboxErrorResponse(TypedDict, total=False):
+    """Generic Freebox API error response."""
 
     success: bool
     error_code: str
-    result: FreeboxChallengeResult
+    msg: str
+    uid: str
 
 
 class FreeboxSessionResponse(TypedDict):
