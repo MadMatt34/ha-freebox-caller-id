@@ -1,14 +1,19 @@
 # Freebox Caller ID - Intégration pour Home Assistant
 
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
 [![Latest Release](https://img.shields.io/github/v/release/MadMatt34/ha-freebox-caller-id?color=green)](https://github.com/MadMatt34/ha-freebox-caller-id/releases)
-
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
+[![Quality scale](https://img.shields.io/badge/Quality%20scale-silver-silver)](https://www.home-assistant.io/docs/quality_scale/#-silver)
+[![HACS](https://img.shields.io/badge/HACS-Default-blue)](https://github.com/hacs/default)
+![Installs](https://img.shields.io/badge/dynamic/json?label=Installations&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha-freebox-caller-id.total)
+\
 [![HACS Check](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hacs.yml)
 [![Hassfest Check](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hassfest.yml)
+[![Tests](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/tests.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/tests.yml)
+[![Coverage](https://img.shields.io/badge/coverage-%3E95%25-brightgreen)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/tests.yml)
 
 ![Freebox Caller ID for Home Assistant](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/logo.png)
 
-[🏴󠁧󠁢󠁥󠁮󠁧󠁿 README in ENGLISH 🏴󠁧󠁢󠁥󠁮󠁧󠁿](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/README.md)
+[❗ README in ENGLISH 🇬🇧 ❗](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/README.md)
 
 **Freebox Caller ID** est une intégration personnalisée pour Home Assistant permettant de détecter **en temps réel** les appels téléphoniques entrants sur la ligne fixe de votre [Freebox](https://www.free.fr/freebox), sans ajout de matériel supplémentaire.
 
@@ -32,7 +37,8 @@ Cette intégration effectue un scan HTTP rapide et asynchrone (polling toutes le
 
 ### Option 1 : Installation via HACS (dépôt personnalisé - 📌 recommandée)
 
-1. Ouvrir **HACS**  
+1. Ouvrir **HACS**\
+    [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=MadMatt34&repository=ha-freebox-caller-id&category=integration)
 2. Cliquer sur les 3 points en haut à droite > **Dépôts personnalisés**.
 3. Ajouter : `https://github.com/MadMatt34/ha-freebox-caller-id`
 4. Choisir la catégorie **Intégration** et valider
@@ -296,7 +302,16 @@ En cas de redémarrage de la Freebox ou de mise à jour du firmware :
 - Vérifiez que votre Freebox est accessible sur le réseau local
 - Assurez-vous que Home Assistant peut communiquer avec la Freebox
 - Consultez les logs : **Paramètres → Système → Journaux**
-- Diagnostics & Vie privée : Exportez vos fichiers de diagnostic en toute sécurité lors de l'ouverture d'un ticket sur GitHub ; vos jetons d'accès, identifiants et données personnelles (numéros de téléphone et noms des correspondants) sont automatiquement anonymisés.
+
+> [!NOTE]
+> **Diagnostics & Vie privée :**\
+> Exportez vos fichiers de diagnostic en toute sécurité lors de l'ouverture d'un ticket sur GitHub ; vos jetons d'accès, identifiants et données personnelles (numéros de téléphone et noms des correspondants) sont automatiquement anonymisés.
+
+---
+
+## 🌐 Langues prises en charge
+
+🇬🇧 English • 🇫🇷 Français
 
 ---
 
