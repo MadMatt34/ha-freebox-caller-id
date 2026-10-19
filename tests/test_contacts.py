@@ -9,7 +9,7 @@ from homeassistant.config_entries import ConfigEntryAuthFailed, ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.update_coordinator import UpdateFailed
+from homeassistant.helpers.update_coordinator import UpdateFailed
 import pytest
 
 from custom_components.freebox_caller_id.const import DOMAIN

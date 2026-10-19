@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import re
 from collections.abc import Mapping
+import re
 from typing import cast
 
-import voluptuous as vol
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigEntryAuthFailed,
@@ -20,6 +19,7 @@ from homeassistant.core import (
 )
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
+import voluptuous as vol
 
 from .const import DOMAIN
 from .coordinator import (
