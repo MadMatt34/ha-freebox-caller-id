@@ -365,7 +365,6 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
             event_data,
         )
 
-
     async def async_get_contacts(self) -> list[FreeboxContact]:
         """Fetch contacts from the Freebox on demand."""
         if not self.session_token:
@@ -410,11 +409,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                         "Invalid response from the Freebox contacts API"
                     ) from err
 
-                error_code = (
-                    raw_data.get("error_code")
-                    if isinstance(raw_data, Mapping)
-                    else None
-                )
+                error_code = raw_data.get("error_code") if isinstance(raw_data, Mapping) else None
 
                 if error_code == "insufficient_rights":
                     raise FreeboxContactPermissionError
@@ -423,13 +418,9 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                     self.session_token = None
                     self.permissions = None
                     if not await self._async_get_session():
-                        raise FreeboxContactApiError(
-                            "Unable to renew the Freebox session"
-                        )
+                        raise FreeboxContactApiError("Unable to renew the Freebox session")
 
-                    if self.permissions is not None and not self.permissions.get(
-                        "contacts", False
-                    ):
+                    if self.permissions is not None and not self.permissions.get("contacts", False):
                         raise FreeboxContactPermissionError
 
                     return await self._async_fetch_contacts(retry=False)
@@ -444,10 +435,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                         f"Freebox contacts API returned HTTP {response.status}"
                     )
 
-                if (
-                    not isinstance(raw_data, Mapping)
-                    or raw_data.get("success") is not True
-                ):
+                if not isinstance(raw_data, Mapping) or raw_data.get("success") is not True:
                     raise FreeboxContactApiError(
                         "Freebox contacts API returned an unsuccessful response"
                     )
@@ -464,7 +452,7 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                     if isinstance(contact, Mapping)
                 ]
 
-        except (FreeboxContactApiError, FreeboxContactPermissionError):
+        except FreeboxContactApiError, FreeboxContactPermissionError:
             raise
         except (
             aiohttp.ClientError,

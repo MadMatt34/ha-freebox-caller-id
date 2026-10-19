@@ -204,15 +204,18 @@ async def test_services_report_contacts_permission_error(
     async_setup_services(hass)
     with (
         patch.object(
-            hass.config_entries, "async_get_entry",
+            hass.config_entries,
+            "async_get_entry",
             return_value=_loaded_entry(coordinator),
         ),
         pytest.raises(HomeAssistantError) as exc_info,
     ):
         await hass.services.async_call(
-            DOMAIN, service_name,
+            DOMAIN,
+            service_name,
             {"config_entry_id": ENTRY_ID, input_key: input_value},
-            blocking=True, return_response=True,
+            blocking=True,
+            return_response=True,
         )
     assert exc_info.value.translation_key == "contacts_permission_denied"
 
@@ -230,15 +233,18 @@ async def test_services_report_contacts_api_error(
     async_setup_services(hass)
     with (
         patch.object(
-            hass.config_entries, "async_get_entry",
+            hass.config_entries,
+            "async_get_entry",
             return_value=_loaded_entry(coordinator),
         ),
         pytest.raises(HomeAssistantError) as exc_info,
     ):
         await hass.services.async_call(
-            DOMAIN, service_name,
+            DOMAIN,
+            service_name,
             {"config_entry_id": ENTRY_ID, input_key: input_value},
-            blocking=True, return_response=True,
+            blocking=True,
+            return_response=True,
         )
     assert exc_info.value.translation_key == "contact_lookup_failed"
 
@@ -252,32 +258,40 @@ async def test_services_report_invalid_app_token(
 ) -> None:
     """Expose a translated authentication error if the app token is revoked."""
     coordinator = MagicMock()
-    coordinator.async_get_contacts = AsyncMock(
-        side_effect=ConfigEntryAuthFailed("invalid token")
-    )
+    coordinator.async_get_contacts = AsyncMock(side_effect=ConfigEntryAuthFailed("invalid token"))
     async_setup_services(hass)
     with (
         patch.object(
-            hass.config_entries, "async_get_entry",
+            hass.config_entries,
+            "async_get_entry",
             return_value=_loaded_entry(coordinator),
         ),
         pytest.raises(HomeAssistantError) as exc_info,
     ):
         await hass.services.async_call(
-            DOMAIN, service_name,
+            DOMAIN,
+            service_name,
             {"config_entry_id": ENTRY_ID, input_key: input_value},
-            blocking=True, return_response=True,
+            blocking=True,
+            return_response=True,
         )
     assert exc_info.value.translation_key == "invalid_app_token"
 
 
 def test_contact_result_filters_invalid_values() -> None:
     """Return valid contact fields only and skip malformed numbers."""
-    result = _contact_result({
-        "id": "not-an-int",
-        "display_name": "",
-        "numbers": [None, {}, {"number": 123}, {"number": "0123456789", "type": 5, "label": ""}],
-    })
+    result = _contact_result(
+        {
+            "id": "not-an-int",
+            "display_name": "",
+            "numbers": [
+                None,
+                {},
+                {"number": 123},
+                {"number": "0123456789", "type": 5, "label": ""},
+            ],
+        }
+    )
     assert result == {"numbers": [{"number": "0123456789"}]}
 
 
@@ -295,9 +309,7 @@ def test_contact_result_with_matched_number() -> None:
         matched_number="0123456789",
     )
     assert result["matched_number"] == "0123456789"
-    assert result["numbers"] == [
-        {"number": "0123456789", "type": "home", "label": "Maison"}
-    ]
+    assert result["numbers"] == [{"number": "0123456789", "type": "home", "label": "Maison"}]
 
 
 def test_contact_search_skips_malformed_contact_values() -> None:
@@ -322,7 +334,8 @@ def test_get_coordinator_rejects_missing_or_wrong_domain(hass: HomeAssistant) ->
 
     with (
         patch.object(
-            hass.config_entries, "async_get_entry",
+            hass.config_entries,
+            "async_get_entry",
             return_value=SimpleNamespace(domain="other", state=ConfigEntryState.LOADED),
         ),
         pytest.raises(ServiceValidationError) as exc_info,
@@ -335,7 +348,8 @@ def test_get_coordinator_rejects_not_loaded_entry(hass: HomeAssistant) -> None:
     """Reject config entries that are not loaded."""
     with (
         patch.object(
-            hass.config_entries, "async_get_entry",
+            hass.config_entries,
+            "async_get_entry",
             return_value=SimpleNamespace(domain=DOMAIN, state=ConfigEntryState.NOT_LOADED),
         ),
         pytest.raises(ServiceValidationError) as exc_info,
@@ -346,9 +360,18 @@ def test_get_coordinator_rejects_not_loaded_entry(hass: HomeAssistant) -> None:
 
 def test_translate_contact_errors() -> None:
     """Map known failures to user-facing translated errors."""
-    assert _translate_contact_error(FreeboxContactPermissionError()).translation_key == "contacts_permission_denied"
-    assert _translate_contact_error(FreeboxContactApiError()).translation_key == "contact_lookup_failed"
-    assert _translate_contact_error(ConfigEntryAuthFailed("invalid token")).translation_key == "invalid_app_token"
+    assert (
+        _translate_contact_error(FreeboxContactPermissionError()).translation_key
+        == "contacts_permission_denied"
+    )
+    assert (
+        _translate_contact_error(FreeboxContactApiError()).translation_key
+        == "contact_lookup_failed"
+    )
+    assert (
+        _translate_contact_error(ConfigEntryAuthFailed("invalid token")).translation_key
+        == "invalid_app_token"
+    )
 
 
 async def test_get_contacts_failed_to_open_session(hass: HomeAssistant) -> None:
@@ -405,7 +428,8 @@ async def test_fetch_contacts_reports_http_error(
     coordinator = _create_coordinator(hass)
     aioclient_mock.get(
         f"http://{FREEBOX_HOST}/api/v4/contact/?limit=-1",
-        status=500, json={"success": False},
+        status=500,
+        json={"success": False},
     )
     with pytest.raises(FreeboxContactApiError):
         await coordinator.async_get_contacts()
@@ -433,7 +457,8 @@ async def test_fetch_contacts_retries_expired_session(
     coordinator = _create_coordinator(hass)
     aioclient_mock.get(
         f"http://{FREEBOX_HOST}/api/v4/contact/?limit=-1",
-        status=403, json={"success": False, "error_code": "auth_required"},
+        status=403,
+        json={"success": False, "error_code": "auth_required"},
     )
     aioclient_mock.get(
         f"http://{FREEBOX_HOST}/api/v4/login/",

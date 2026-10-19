@@ -117,10 +117,7 @@ def _find_contacts_by_number(
             if not isinstance(item, Mapping):
                 continue
             number = item.get("number")
-            if (
-                isinstance(number, str)
-                and _normalize_phone_number(number) == searched_number
-            ):
+            if isinstance(number, str) and _normalize_phone_number(number) == searched_number:
                 matches.append(_contact_result(contact, matched_number=number))
                 break
 
@@ -145,10 +142,7 @@ def _find_contacts_by_name(
             contact.get("company", ""),
             f"{first_name} {last_name}".strip(),
         )
-        if any(
-            isinstance(value, str) and searched_name in value.casefold()
-            for value in values
-        ):
+        if any(isinstance(value, str) and searched_name in value.casefold() for value in values):
             matches.append(_contact_result(contact))
 
     return matches
@@ -195,6 +189,7 @@ def _translate_contact_error(err: Exception) -> HomeAssistantError:
 
 def async_setup_services(hass: HomeAssistant) -> None:
     """Register the integration actions."""
+
     async def async_contact_by_number(call: ServiceCall) -> ServiceResponse:
         """Find a contact by phone number."""
         phone_number = call.data["phone_number"].strip()
