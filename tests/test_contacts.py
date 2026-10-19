@@ -129,8 +129,6 @@ async def test_get_contacts_invalid_response(
         await coordinator.async_get_contacts()
 
 
-
-
 class _FakeResponse:
     """Minimal async response object for session-renewal tests."""
 
