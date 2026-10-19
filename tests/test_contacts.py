@@ -129,6 +129,28 @@ async def test_get_contacts_invalid_response(
         await coordinator.async_get_contacts()
 
 
+
+
+class _FakeResponse:
+    """Minimal async response object for session-renewal tests."""
+
+    def __init__(self, status: int, payload: dict[str, object]) -> None:
+        """Initialize the response."""
+        self.status = status
+        self.payload = payload
+
+    async def json(self) -> dict[str, object]:
+        """Return the prepared JSON payload."""
+        return self.payload
+
+    async def __aenter__(self) -> _FakeResponse:
+        """Enter the response context."""
+        return self
+
+    async def __aexit__(self, *_: object) -> None:
+        """Exit the response context."""
+
+
 SERVICE_INPUTS = (
     ("contact_by_number", "phone_number", "06-12-34-56-78"),
     ("contact_by_name", "name", "Alice"),
@@ -377,6 +399,7 @@ def test_translate_contact_errors() -> None:
 async def test_get_contacts_failed_to_open_session(hass: HomeAssistant) -> None:
     """Raise an API error if a session cannot be opened."""
     coordinator = _create_coordinator(hass)
+    coordinator.session_token = None
     coordinator._async_get_session = AsyncMock(return_value=False)  # type: ignore[method-assign]
     with pytest.raises(FreeboxContactApiError):
         await coordinator.async_get_contacts()
@@ -385,6 +408,7 @@ async def test_get_contacts_failed_to_open_session(hass: HomeAssistant) -> None:
 async def test_get_contacts_denied_by_session_permissions(hass: HomeAssistant) -> None:
     """Check permissions reported when opening a session."""
     coordinator = _create_coordinator(hass)
+    coordinator.session_token = None
 
     async def _session_without_contacts() -> bool:
         coordinator.session_token = SESSION_TOKEN
@@ -455,28 +479,21 @@ async def test_fetch_contacts_retries_expired_session(
 ) -> None:
     """Renew the session and retry when the Freebox rejects the old session."""
     coordinator = _create_coordinator(hass)
-    aioclient_mock.get(
-        f"http://{FREEBOX_HOST}/api/v4/contact/?limit=-1",
-        status=403,
-        json={"success": False, "error_code": "auth_required"},
-    )
-    aioclient_mock.get(
-        f"http://{FREEBOX_HOST}/api/v4/login/",
-        json={"success": True, "result": {"challenge": "test-challenge"}},
-    )
-    aioclient_mock.post(
-        f"http://{FREEBOX_HOST}/api/v4/login/session/",
-        json={
+    coordinator.session = MagicMock()
+    coordinator.session.get.side_effect = [
+        _FakeResponse(403, {"success": False, "error_code": "auth_required"}),
+        _FakeResponse(200, {"success": True, "result": {"challenge": "test-challenge"}}),
+        _FakeResponse(200, {"success": True, "result": CONTACTS}),
+    ]
+    coordinator.session.post.return_value = _FakeResponse(
+        200,
+        {
             "success": True,
             "result": {
                 "session_token": "renewed-session-token",
                 "permissions": {"contacts": True},
             },
         },
-    )
-    aioclient_mock.get(
-        f"http://{FREEBOX_HOST}/api/v4/contact/?limit=-1",
-        json={"success": True, "result": CONTACTS},
     )
     assert await coordinator.async_get_contacts() == CONTACTS
     assert coordinator.session_token == "renewed-session-token"
@@ -501,6 +518,7 @@ async def test_update_data_session_error_still_raises_update_failed(
 ) -> None:
     """Preserve the existing coordinator failure behavior."""
     coordinator = _create_coordinator(hass)
+    coordinator.session_token = None
     coordinator._async_get_session = AsyncMock(return_value=False)  # type: ignore[method-assign]
     with pytest.raises(UpdateFailed):
         await coordinator._async_update_data()
