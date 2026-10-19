@@ -24,16 +24,16 @@ from homeassistant.helpers.update_coordinator import (
 from .const import APP_ID, DOMAIN, EVENT_INCOMING_CALL
 from .types import (
     CallType,
-    FreeboxContact,
-    FreeboxSessionPermissions,
     FreeboxCall,
     FreeboxCallerData,
     FreeboxCallLogResponse,
     FreeboxChallengeResult,
+    FreeboxContact,
     FreeboxErrorResponse,
     FreeboxIncomingCallEvent,
     FreeboxLoginResponse,
     FreeboxRecentCall,
+    FreeboxSessionPermissions,
     FreeboxSessionResponse,
     FreeboxSystemInfo,
     FreeboxSystemResponse,
@@ -368,12 +368,16 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
 
     async def async_get_contacts(self) -> list[FreeboxContact]:
         """Fetch contacts from the Freebox on demand."""
-        if not self.session_token and not await self._async_get_session():
-            raise FreeboxContactApiError("Unable to open a Freebox session")
+        if not self.session_token:
+            if not await self._async_get_session():
+                raise FreeboxContactApiError("Unable to open a Freebox session")
 
-        # Refresh once so permission changes made in Freebox OS can take
-        # effect without requiring a Home Assistant restart.
-        if self.permissions is not None and not self.permissions.get("contacts", False):
+            if self.permissions is not None and not self.permissions.get("contacts", False):
+                raise FreeboxContactPermissionError
+
+        elif self.permissions is not None and not self.permissions.get("contacts", False):
+            # Permissions can be changed in Freebox OS while Home Assistant is
+            # running. Renew the session once to fetch the current permissions.
             self.session_token = None
             self.permissions = None
             if not await self._async_get_session():
@@ -406,32 +410,31 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                         "Invalid response from the Freebox contacts API"
                     ) from err
 
-                if response.status == 403:
-                    error_code = (
-                        raw_data.get("error_code")
-                        if isinstance(raw_data, Mapping)
-                        else None
-                    )
+                error_code = (
+                    raw_data.get("error_code")
+                    if isinstance(raw_data, Mapping)
+                    else None
+                )
 
-                    if error_code == "insufficient_rights":
+                if error_code == "insufficient_rights":
+                    raise FreeboxContactPermissionError
+
+                if error_code in ("auth_required", "invalid_token") and retry:
+                    self.session_token = None
+                    self.permissions = None
+                    if not await self._async_get_session():
+                        raise FreeboxContactApiError(
+                            "Unable to renew the Freebox session"
+                        )
+
+                    if self.permissions is not None and not self.permissions.get(
+                        "contacts", False
+                    ):
                         raise FreeboxContactPermissionError
 
-                    if retry and error_code in ("auth_required", "invalid_token"):
-                        self.session_token = None
-                        self.permissions = None
-                        if not await self._async_get_session():
-                            raise FreeboxContactApiError(
-                                "Unable to renew the Freebox session"
-                            )
+                    return await self._async_fetch_contacts(retry=False)
 
-                        if (
-                            self.permissions is not None
-                            and not self.permissions.get("contacts", False)
-                        ):
-                            raise FreeboxContactPermissionError
-
-                        return await self._async_fetch_contacts(retry=False)
-
+                if response.status == 403:
                     raise FreeboxContactApiError(
                         f"Freebox contacts API returned HTTP 403 ({error_code or 'unknown error'})"
                     )
