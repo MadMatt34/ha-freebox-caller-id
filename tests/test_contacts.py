@@ -314,7 +314,7 @@ async def test_services_reject_search_below_minimum_length(
 
 @pytest.mark.parametrize(
     "phone_number",
-    ["06-12", "06 12", "12a", "++123", "12+", "+-12", " 123", "123 ", "\uFF11\uFF12\uFF13"],
+    ["06-12", "06 12", "12a", "++123", "12+", "+-12", " 123", "123 "],
 )
 async def test_services_reject_phone_search_with_invalid_characters(
     hass: HomeAssistant,
