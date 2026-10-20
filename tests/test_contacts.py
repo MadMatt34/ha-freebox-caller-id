@@ -74,6 +74,9 @@ def test_find_contacts_by_number() -> None:
     assert len(matches) == 1
     assert matches[0]["display_name"] == "Alice Martin"
     assert matches[0]["matched_number"] == "06 12 34 56 78"
+    assert _find_contacts_by_number(CONTACTS, "06-12-34-56-78") == matches
+    assert _find_contacts_by_number(CONTACTS, "06.12.34.56.78") == matches
+    assert _find_contacts_by_number(CONTACTS, "06 12-34.56 78") == matches
     assert _find_contacts_by_number(CONTACTS, "0612345670") == []
 
 
@@ -275,6 +278,36 @@ async def test_services_contact_lookup_success(
     coordinator.async_get_contacts.assert_awaited_once()
 
 
+async def test_service_normalizes_formatted_phone_before_matching(
+    hass: HomeAssistant,
+) -> None:
+    """Normalize spaces, dots, and hyphens before passing the search to matching."""
+    coordinator = MagicMock()
+    coordinator.async_get_contacts = AsyncMock(return_value=CONTACTS)
+    async_setup_services(hass)
+    with (
+        patch.object(
+            hass.config_entries,
+            "async_entries",
+            return_value=[_loaded_entry(coordinator)],
+        ),
+        patch(
+            "custom_components.freebox_caller_id.services._find_contacts_by_number",
+            wraps=_find_contacts_by_number,
+        ) as find_contacts,
+    ):
+        result = await hass.services.async_call(
+            DOMAIN,
+            "contact_by_number",
+            {"phone_number": " 06 12-34.56 78 "},
+            blocking=True,
+            return_response=True,
+        )
+    assert result == {"matches": _find_contacts_by_number(CONTACTS, "0612345678")}
+    find_contacts.assert_called_once_with(CONTACTS, "0612345678")
+    coordinator.async_get_contacts.assert_awaited_once()
+
+
 @pytest.mark.parametrize(("service_name", "input_key", "_"), SERVICE_INPUTS)
 async def test_services_empty_search_is_rejected(
     hass: HomeAssistant,
@@ -299,6 +332,8 @@ async def test_services_empty_search_is_rejected(
     [
         ("contact_by_number", "phone_number", "1"),
         ("contact_by_number", "phone_number", "12"),
+        ("contact_by_number", "phone_number", "1-2"),
+        ("contact_by_number", "phone_number", "1.2"),
         ("contact_by_name", "name", "A"),
         ("contact_by_name", "name", "Al"),
         ("contact_by_name", "name", " A "),
@@ -332,13 +367,13 @@ async def test_services_return_no_matches_for_search_below_minimum_length(
 
 @pytest.mark.parametrize(
     "phone_number",
-    ["06-12", "06 12", "12a", "++123", "12+", "+-12", " 123", "123 "],
+    ["12a", "++123", "12+", "+-12", "12/34", "06_12"],
 )
 async def test_services_reject_phone_search_with_invalid_characters(
     hass: HomeAssistant,
     phone_number: str,
 ) -> None:
-    """Reject phone searches containing non-ASCII digits or invalid punctuation."""
+    """Reject phone searches containing unsupported characters or plus placement."""
     async_setup_services(hass)
     with pytest.raises(ServiceValidationError) as exc_info:
         await hass.services.async_call(
