@@ -6,8 +6,6 @@ from collections.abc import Mapping
 import re
 from typing import cast
 
-import phonenumbers
-
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigEntryAuthFailed,
@@ -21,6 +19,7 @@ from homeassistant.core import (
 )
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
+import phonenumbers
 import voluptuous as vol
 
 from .const import DOMAIN
