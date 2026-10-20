@@ -70,11 +70,18 @@ def _create_coordinator(hass: HomeAssistant) -> FreeboxCallerCoordinator:
 
 def test_find_contacts_by_number() -> None:
     """Match exact numbers while ignoring common display formatting."""
-    matches = _find_contacts_by_number(CONTACTS, "06-12-34-56-78")
+    matches = _find_contacts_by_number(CONTACTS, "0612345678")
     assert len(matches) == 1
     assert matches[0]["display_name"] == "Alice Martin"
     assert matches[0]["matched_number"] == "06 12 34 56 78"
     assert _find_contacts_by_number(CONTACTS, "0612345670") == []
+
+
+def test_find_contacts_by_number_rejects_short_or_invalid_query() -> None:
+    """Direct searches must also enforce input validation."""
+    assert _find_contacts_by_number(CONTACTS, "12") == []
+    assert _find_contacts_by_number(CONTACTS, "06-12") == []
+    assert _find_contacts_by_number(CONTACTS, "+") == []
 
 
 def test_find_contacts_by_number_accepts_partial_number() -> None:
@@ -104,7 +111,7 @@ def test_find_contacts_by_number_partial_with_country_prefix() -> None:
         },
     ]
 
-    matches = _find_contacts_by_number(contacts, "+33 6123")
+    matches = _find_contacts_by_number(contacts, "+336123")
 
     assert [item["display_name"] for item in matches] == ["Alice"]
 
@@ -116,7 +123,7 @@ def test_find_contacts_by_number_does_not_mix_countries() -> None:
         {"display_name": "American", "numbers": [{"number": "+1 612 345 6789"}]},
     ]
 
-    matches = _find_contacts_by_number(contacts, "+1 612")
+    matches = _find_contacts_by_number(contacts, "+1612")
 
     assert [item["display_name"] for item in matches] == ["American"]
 
@@ -124,8 +131,8 @@ def test_find_contacts_by_number_does_not_mix_countries() -> None:
 @pytest.mark.parametrize(
     ("stored_number", "searched_number"),
     [
-        ("06 12 34 56 78", "+33 6 12 34 56 78"),
-        ("+33 6 12 34 56 78", "06.12.34.56.78"),
+        ("06 12 34 56 78", "+33612345678"),
+        ("+33 6 12 34 56 78", "0612345678"),
         ("0033 6 12 34 56 78", "0612345678"),
     ],
 )
