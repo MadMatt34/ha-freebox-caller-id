@@ -109,6 +109,18 @@ def test_find_contacts_by_number_partial_with_country_prefix() -> None:
     assert [item["display_name"] for item in matches] == ["Alice"]
 
 
+def test_find_contacts_by_number_does_not_mix_countries() -> None:
+    """Do not match numbers from different explicit international country codes."""
+    contacts: list[FreeboxContact] = [
+        {"display_name": "French", "numbers": [{"number": "+33 6 12 34 56 78"}]},
+        {"display_name": "American", "numbers": [{"number": "+1 612 345 6789"}]},
+    ]
+
+    matches = _find_contacts_by_number(contacts, "+1 612")
+
+    assert [item["display_name"] for item in matches] == ["American"]
+
+
 @pytest.mark.parametrize(
     ("stored_number", "searched_number"),
     [
@@ -208,7 +220,7 @@ class _FakeResponse:
 
 
 SERVICE_INPUTS = (
-    ("contact_by_number", "phone_number", "06-12-34-56-78"),
+    ("contact_by_number", "phone_number", "0612345678"),
     ("contact_by_name", "name", "Alice"),
 )
 

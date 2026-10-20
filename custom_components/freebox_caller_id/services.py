@@ -37,6 +37,7 @@ from .types import (
 
 SERVICE_CONTACT_BY_NUMBER = "contact_by_number"
 SERVICE_CONTACT_BY_NAME = "contact_by_name"
+MIN_SEARCH_LENGTH = 3
 
 _CONTACT_BY_NUMBER_SCHEMA = vol.Schema(
     {
@@ -48,6 +49,14 @@ _CONTACT_BY_NAME_SCHEMA = vol.Schema(
         vol.Required("name"): cv.string,
     }
 )
+
+
+def _phone_country_code(number: str) -> int | None:
+    """Return the parsed country calling code, assuming France for national input."""
+    try:
+        return phonenumbers.parse(number, "FR").country_code
+    except phonenumbers.NumberParseException:
+        return None
 
 
 def _phone_number_variants(number: str) -> set[str]:
@@ -157,6 +166,16 @@ def _find_contacts_by_number(
             if not isinstance(number, str) or not number:
                 continue
 
+            # Do not match coincidentally similar digits across different countries.
+            searched_country = _phone_country_code(phone_number)
+            contact_country = _phone_country_code(number)
+            if (
+                searched_country is not None
+                and contact_country is not None
+                and searched_country != contact_country
+            ):
+                continue
+
             contact_variants = _phone_number_variants(number)
             if any(
                 searched in candidate
@@ -242,6 +261,17 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 translation_key="empty_phone_number",
             )
 
+        if not re.fullmatch(r"\+?[0-9]+", phone_number):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="invalid_phone_number",
+            )
+        if sum(character.isdigit() for character in phone_number) < MIN_SEARCH_LENGTH:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="search_too_short",
+            )
+
         coordinator = _get_coordinator(hass)
         try:
             contacts = await coordinator.async_get_contacts()
@@ -264,6 +294,12 @@ def async_setup_services(hass: HomeAssistant) -> None:
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="empty_contact_name",
+            )
+
+        if len(name) < MIN_SEARCH_LENGTH:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="search_too_short",
             )
 
         coordinator = _get_coordinator(hass)
