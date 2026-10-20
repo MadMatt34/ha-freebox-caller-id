@@ -13,7 +13,7 @@
 
 ![Freebox Caller ID for Home Assistant](docs/logo.png)
 
-[❗README en FRANCAIS 🇫🇷 ❗](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/README.fr.md)
+[❗README en FRANCAIS 🇫🇷 ❗](README.fr.md)
 
 **Freebox Caller ID** is a custom Home Assistant integration designed to detect incoming calls on your [Freebox](https://www.free.fr/freebox) landline **in real-time**, without requiring any additional hardware.
 
@@ -34,7 +34,7 @@ By default, the [Freebox OS API](https://dev.freebox.fr/sdk/os/) does not send p
 
 ## 🧩 Installation
 
-### Option 1: HACS Installation (Integrated Repository - 📌 Recommended)
+### Option 1: HACS Installation (Included Repository - 📌 Recommended)
 
 1. Open **Freebox Caller ID** integration in **HACS** in Home Assistant.\
     [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=MadMatt34&repository=ha-freebox-caller-id&category=integration)

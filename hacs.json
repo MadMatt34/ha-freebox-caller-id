@@ -1,7 +1,5 @@
 {
   "name": "Freebox Caller ID",
-  "content_in_root": false,
   "render_readme": true,
-  "country": ["FR"],
   "homeassistant": "2026.8.0"
 }
