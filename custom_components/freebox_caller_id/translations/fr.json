@@ -91,6 +91,12 @@
     "empty_contact_name": {
       "message": "Saisissez un nom de contact non vide."
     },
+    "invalid_phone_number": {
+      "message": "Le numéro doit contenir uniquement des chiffres et éventuellement un + au début."
+    },
+    "search_too_short": {
+      "message": "La recherche doit contenir au moins 3 caractères."
+    },
     "contacts_permission_denied": {
       "message": "L'accès au carnet d'adresses de la Freebox n'est pas autorisé. Dans Freebox OS, ouvrez Paramètres > Gestion des accès > Applications > HA CallerID et activez l'accès aux contacts."
     },
