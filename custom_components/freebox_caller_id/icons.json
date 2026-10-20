@@ -14,5 +14,13 @@
         }
       }
     }
+  },
+  "services": {
+    "contact_by_number": {
+      "service": "mdi:card-account-phone"
+    },
+    "contact_by_name": {
+      "service": "mdi:account-search"
+    }
   }
 }

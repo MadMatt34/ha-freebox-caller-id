@@ -11,9 +11,9 @@
 [![Tests](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/tests.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/tests.yml)
 [![Coverage](https://img.shields.io/badge/coverage-%3E95%25-brightgreen)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/tests.yml)
 
-![Freebox Caller ID for Home Assistant](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/logo.png)
+![Freebox Caller ID for Home Assistant](docs/logo.png)
 
-[❗README en FRANCAIS 🇫🇷 ❗](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/README.fr.md)
+[❗README en FRANCAIS 🇫🇷 ❗](README.fr.md)
 
 **Freebox Caller ID** is a custom Home Assistant integration designed to detect incoming calls on your [Freebox](https://www.free.fr/freebox) landline **in real-time**, without requiring any additional hardware.
 
@@ -21,13 +21,12 @@
 
 ## ⚡ Main Features
 
-By default, the [Freebox OS API](https://dev.freebox.fr/sdk/os/) does not send push notifications when a phone rings. However, the Freebox immediately registers incoming calls in its call log (`/api/v4/call/log/`) upon the very first ring with a duration of `0`.
-
-This integration performs fast, asynchronous HTTP polling (every 2 seconds by default) to:
+By default, the [Freebox OS API](https://dev.freebox.fr/sdk/os/) does not send push notifications when a phone rings. However, the Freebox immediately registers incoming calls in its call log (`/api/v4/call/log/`) upon the very first ring with a duration of `0`. This integration performs fast, asynchronous HTTP polling (every 2 seconds by default).
 
 - Fire a **native event** (`freebox_incoming_call`) on the first ring signal.
 - Turn on a **binary sensor** (`binary_sensor.freebox_phone_ringing`) while the phone is ringing, enriched with caller information.
 - Store the caller's details in a **dedicated sensor** (`sensor.freebox_phone_last_call`), alongside a history of the last 10 calls.
+- Provide two actions to **search contacts** stored in your Freebox phonebook (`freebox_caller_id.contact_by_number` and `freebox_caller_id.contact_by_name`).
 - Work **100% locally** without any cloud dependency.
 - Smoothly handle Freebox reboots.
 
@@ -35,17 +34,22 @@ This integration performs fast, asynchronous HTTP polling (every 2 seconds by de
 
 ## 🧩 Installation
 
-### Option 1: HACS Installation (Custom Repository - 📌 Recommended)
+### Option 1: HACS Installation (Included Repository - 📌 Recommended)
 
-1. Open **HACS** in Home Assistant.\
+1. Open **Freebox Caller ID** integration in **HACS** in Home Assistant.\
     [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=MadMatt34&repository=ha-freebox-caller-id&category=integration)
+2. Click **Download**, then restart Home Assistant.
+
+### Option 2: HACS Installation (Custom Repository)
+
+1. Open **HACS** in Home Assistant.
 2. Click **Custom Repositories** (top right menu).
 3. Add: `https://github.com/MadMatt34/ha-freebox-caller-id`
-4. Select category: **Integration**.
-5. Click **Add**, then find and download **Freebox Caller ID**.
+4. Select category **Integration** and click **Add**.
+5. Find and download **Freebox Caller ID**.
 6. Restart Home Assistant.
 
-### Option 2: Manual Installation
+### Option 3: Manual Installation
 
 1. Copy the `freebox_caller_id` folder into your `/config/custom_components/` directory.
 2. Restart Home Assistant to detect the new integration.
@@ -76,7 +80,7 @@ Setup is performed **100% via the Home Assistant User Interface**.
 1. Log in to your Freebox OS web interface: [http://mafreebox.freebox.fr](http://mafreebox.freebox.fr).
 2. Go to **Freebox Settings** > **Access Management** > **Applications** tab.
 3. Click on **HA CallerID**.
-4. Check the box for **Access to call log** (*Accès au journal d'appels*).
+4. Check the boxes for **Access to call log** (*Accès au journal d'appels*) and **Access to contact list** (*Accès au carnet d'adresses*).
 5. Click **Save**.
 
 ---
@@ -94,9 +98,9 @@ You can adjust some settings at any time:
 
 ---
 
-## 📡 Events and Entities
+## 📦 Events, Entities, and Actions
 
-### 1. Home Assistant Event: `freebox_incoming_call`
+### 📡 Home Assistant Event: `freebox_incoming_call`
 
 Fired instantaneously as soon as a new incoming call starts ringing.
 
@@ -110,7 +114,7 @@ Fired instantaneously as soon as a new incoming call starts ringing.
 
 ---
 
-### 2. Binary Sensor: `binary_sensor.freebox_phone_ringing`
+### 🔘 Binary Sensor: `binary_sensor.freebox_phone_ringing`
 
 - **Device Class**: `sound`
 - **State**:
@@ -124,7 +128,7 @@ Fired instantaneously as soon as a new incoming call starts ringing.
 
 ---
 
-### 3. Sensor: `sensor.freebox_phone_last_call`
+### 📊 Sensor: `sensor.freebox_phone_last_call`
 
 - **State**: Name or phone number of the last recorded caller.
 - **Attributes:** List of the last 10 calls with the following details:
@@ -133,6 +137,70 @@ Fired instantaneously as soon as a new incoming call starts ringing.
   - `type`: Type of call.
   - `duration`: Call duration in seconds.
   - `timestamp`: Date/Time received.
+
+---
+
+### 📇 Contact Lookup Actions
+
+- **Search by phone number** `freebox_caller_id.contact_by_number`
+
+Phone-number searches support partial or complete numbers and require at least 3 digits.\
+Spaces, dots, and hyphens are removed before matching.\
+Every complete parenthesized group is removed, including the parentheses and all characters inside them.\
+An optional leading + is preserved for international numbers.
+
+Example action in an automation or script:
+
+```
+actions:
+  - action: freebox_caller_id.contact_by_number
+    data:
+      phone_number: "+33 (0)6 12-34.56.78"
+    response_variable: contact_search
+```
+
+- **Search by contact name** `freebox_caller_id.contact_by_name`
+
+The search is case-insensitive and supports partial matches in the contact's display name, first name, last name, or company name.\
+At least 3 characters are required.
+
+Example action in an automation or script:
+
+```
+actions:
+  - action: freebox_caller_id.contact_by_name
+    data:
+      name: "Alice"
+    response_variable: contact_search
+```
+
+- **Response format**
+
+Both actions return an object containing a matches list.\
+Each matching contact may include its ID, display name, first name, last name, company, and phone numbers.\
+For number searches, each result also includes matched_number, which identifies the stored number that matched the query.
+
+Example response:
+
+```
+{
+  "matches": [
+    {
+      "id": 1,
+      "display_name": "Alice Martin",
+      "matched_number": "06 12 34 56 78",
+      "numbers": [
+        {
+          "number": "06 12 34 56 78",
+          "type": "mobile"
+        }
+      ]
+    }
+  ]
+}
+```
+> [!NOTE]
+> When no contact matches the query, or the query is shorter than the minimum length, or unsupported charaters are used, matches is an empty list.
 
 ---
 
@@ -287,12 +355,11 @@ visibility:
 
 ---
 
-## 🛡️ Error Handling
+## 🛡️ Unavailibilities Handling
 
 If your Freebox reboots or undergoes a firmware update:
 
 - A single warning log is logged in Home Assistant when communication is lost.
-- As soon as the Freebox becomes unavailable, the integration reports the failure to Home Assistant’s `DataUpdateCoordinator`.
 - Once the Freebox comes back online, the session automatically re-authenticates and restores the original polling interval without requiring a Home Assistant restart.
 
 ---
@@ -301,7 +368,8 @@ If your Freebox reboots or undergoes a firmware update:
 
 - Verify that your Freebox is accessible on your local network.
 - Ensure Home Assistant can reach the Freebox host IP.
-- Check logs: **Settings → System → Logs**.
+- Check logs: **Settings → System → Logs**\
+[![Open your Home Assistant instance and show your Home Assistant logs.](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/)
 
 > [!NOTE]
 > **Diagnostics & Privacy:**\

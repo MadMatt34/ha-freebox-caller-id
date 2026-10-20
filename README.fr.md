@@ -11,9 +11,9 @@
 [![Tests](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/tests.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/tests.yml)
 [![Coverage](https://img.shields.io/badge/coverage-%3E95%25-brightgreen)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/tests.yml)
 
-![Freebox Caller ID for Home Assistant](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/logo.png)
+![Freebox Caller ID for Home Assistant](docs/logo.png)
 
-[❗ README in ENGLISH 🇬🇧 ❗](https://github.com/MadMatt34/ha-freebox-caller-id/blob/main/README.md)
+[❗ README in ENGLISH 🇬🇧 ❗](README.md)
 
 **Freebox Caller ID** est une intégration personnalisée pour Home Assistant permettant de détecter **en temps réel** les appels téléphoniques entrants sur la ligne fixe de votre [Freebox](https://www.free.fr/freebox), sans ajout de matériel supplémentaire.
 
@@ -21,34 +21,39 @@
 
 ## ⚡ Fonctionnalités principales
 
-Par défaut, l'[API Freebox OS](https://dev.freebox.fr/sdk/os/) n'émet aucun push lorsqu'un téléphone sonne. Cependant, la Freebox inscrit immédiatement l'appel entrant dans son registre (`/api/v4/call/log/`) dès la première sonnerie avec une durée égale à `0`.
+Par défaut, l'[API Freebox OS](https://dev.freebox.fr/sdk/os/) n'émet aucun push lorsqu'un téléphone sonne. Cependant, la Freebox inscrit immédiatement l'appel entrant dans son registre (`/api/v4/call/log/`) dès la première sonnerie avec une durée égale à `0`. L'intégration effectue un scan HTTP rapide et asynchrone (polling toutes les 2 secondes par défaut).
 
-Cette intégration effectue un scan HTTP rapide et asynchrone (polling toutes les 2 secondes par défaut) pour :
-
-- Déclencher un **événement natif** (`freebox_incoming_call`) dès le premier signal de sonnerie.
-- Activer un **capteur binaire** (`binary_sensor.freebox_phone_sonnerie`) pendant toute la durée où le téléphone sonne, avec les informations de l'appelant.
-- Conserver les données de l'appelant dans un **capteur dédié** (`sensor.freebox_phone_dernier_appel`), et l'historique des 10 derniers appels.
-- Fonctionner en **local**, sans cloud
-- Gérer de manière transparente les redémarrages de la Freebox.
+- Déclenche un **événement natif** (`freebox_incoming_call`) dès le premier signal de sonnerie.
+- Active un **capteur binaire** (`binary_sensor.freebox_phone_sonnerie`) pendant toute la durée où le téléphone sonne, avec les informations de l'appelant.
+- Conserve les données de l'appelant dans un **capteur dédié** (`sensor.freebox_phone_dernier_appel`), et l'historique des 10 derniers appels.
+- Met à disposition deux actions permettant de **rechercher des contacts** enregistrés dans le répertoire de votre Freebox (`freebox_caller_id.contact_by_number` et `freebox_caller_id.contact_by_name`).
+- Fonctionne en **local**, sans cloud.
+- Gère de manière transparente les redémarrages de la Freebox.
 
 ---
 
 ## 🧩 Installation
 
-### Option 1 : Installation via HACS (dépôt personnalisé - 📌 recommandée)
+### Option 1 : Installation via HACS (dépôt inclus - 📌 recommandée)
 
-1. Ouvrir **HACS**\
+1. Ouvrir l'intégration **Freebox Caller ID** dans **HACS**\
     [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=MadMatt34&repository=ha-freebox-caller-id&category=integration)
+2. Cliquer sur **Télécharger**, puis redémarrer Home Assistant.
+
+### Option 2 : Installation via HACS (dépôt personnalisé)
+
+1. Ouvrir **HACS**
 2. Cliquer sur les 3 points en haut à droite > **Dépôts personnalisés**.
 3. Ajouter : `https://github.com/MadMatt34/ha-freebox-caller-id`
 4. Choisir la catégorie **Intégration** et valider
-5. Cliquez sur **Télécharger**, puis redémarrer Home Assistant.
+5. Chercher et télécharger **Freebox Caller ID**.
+6. Redémarrer Home Assistant.
 
-### Option 2 : Installation manuelle
+### Option 3 : Installation manuelle
 
-1. Téléchargez la dernière *Release* de ce dépôt.
-2. Copiez le dossier `freebox_caller_id` dans `/config/custom_components/`.
-3. Redémarrez Home Assistant pour faire détecter la nouvelle intégration.
+1. Télécharger la dernière *Release* de ce dépôt.
+2. Copier le dossier `freebox_caller_id` dans `/config/custom_components/`.
+3. Redémarrer Home Assistant pour faire détecter la nouvelle intégration.
 
 ---
 
@@ -73,11 +78,11 @@ L'installation se fait **100 % via l'interface graphique** de Home Assistant.
 
 ### Étape 3 : Autorisation dans l'interface Freebox OS
 
-1. Connectez-vous sur votre espace Freebox OS : [http://mafreebox.freebox.fr](http://mafreebox.freebox.fr).
-2. Allez dans **Paramètres de la Freebox** > **Gestion des accès** > Onglet **Applications**.
-3. Cliquez sur la ligne **HA CallerID**.
-4. Cochez la case **Accès au journal d'appels**.
-5. Enregistrez.
+1. Se connecter sur votre espace Freebox OS : [http://mafreebox.freebox.fr](http://mafreebox.freebox.fr).
+2. Aller dans **Paramètres de la Freebox** > **Gestion des accès** > Onglet **Applications**.
+3. Cliquer sur la ligne **HA CallerID**.
+4. Cocher les cases **Accès au journal d'appels** et **Accès au carnet d'adresses**.
+5. Enregistrer.
 
 ---
 
@@ -94,9 +99,9 @@ Vous pouvez ajuster certains paramètres à tout moment :
 
 ---
 
-## 📡 Événements et Entités créés
+## 📦 Événements, Entités, et Actions
 
-### 1. Événement Home Assistant : `freebox_incoming_call`
+### 📡 Événement Home Assistant : `freebox_incoming_call`
 
 Émis instantanément à l'arrivée de la première sonnerie d'un nouvel appel.
 
@@ -110,7 +115,7 @@ Vous pouvez ajuster certains paramètres à tout moment :
 
 ---
 
-### 2. Capteur binaire : `binary_sensor.freebox_phone_sonnerie`
+### 🔘 Capteur binaire : `binary_sensor.freebox_phone_sonnerie`
 
 - **Device Class** : `sound`
 - **État** :
@@ -124,7 +129,7 @@ Vous pouvez ajuster certains paramètres à tout moment :
 
 ---
 
-### 3. Capteur : `sensor.freebox_phone_dernier_appel`
+### 📊 Capteur : `sensor.freebox_phone_dernier_appel`
 
 - **État** : Nom ou numéro du dernier appelant enregistré.
 - **Attributs enrichis :** Liste des 10 derniers appels avec les informations suivantes
@@ -133,6 +138,71 @@ Vous pouvez ajuster certains paramètres à tout moment :
   - `type` : Type de l'appel.
   - `duration` : Durée de communication en secondes.
   - `timestamp` : Date/Heure de réception.
+
+---
+
+### 📇 Actions de recherche de contacts
+
+- **Recherche par numéro de téléphone** `freebox_caller_id.contact_by_number`
+
+La recherche accepte les numéros complets ou partiels et nécessite au moins 3 chiffres.\
+Les espaces, les points et les tirets sont supprimés avant la recherche.\
+Chaque groupe complet entre parenthèses est supprimé, parenthèses comprises, ainsi que tous les caractères qu'il contient.\
+Un + initial est conservé pour les numéros internationaux.
+
+Exemple d'action dans une automatisation ou un script :
+
+```
+actions:
+  - action: freebox_caller_id.contact_by_number
+    data:
+      phone_number: "+33 (0)6 12-34.56.78"
+    response_variable: recherche_contact
+```
+
+- **Recherche par nom de contact** `freebox_caller_id.contact_by_name`
+
+La recherche ne tient pas compte des majuscules et accepte une partie du nom affiché, du prénom, du nom de famille ou du nom de l'entreprise.\
+Au moins 3 caractères sont requis.
+
+Exemple d'action dans une automatisation ou un script :
+
+```
+actions:
+  - action: freebox_caller_id.contact_by_name
+    data:
+      name: "Alice"
+    response_variable: recherche_contact
+```
+
+- **Format de la réponse**
+
+Les deux actions retournent un objet contenant une liste matches.\
+Chaque contact trouvé peut inclure son identifiant, son nom affiché, son prénom, son nom de famille, son entreprise et ses numéros de téléphone.\
+Pour les recherches par numéro, chaque résultat contient également matched_number, qui identifie le numéro enregistré correspondant à la recherche.
+
+Exemple de réponse :
+
+```
+{
+  "matches": [
+    {
+      "id": 1,
+      "display_name": "Alice Martin",
+      "matched_number": "06 12 34 56 78",
+      "numbers": [
+        {
+          "number": "06 12 34 56 78",
+          "type": "mobile"
+        }
+      ]
+    }
+  ]
+}
+```
+
+> [!NOTE]
+> Lorsqu'aucun contact ne correspond, ou lorsque la recherche est plus courte que la longueur minimale requise, ou lorsque des caractères non acceptés sont utilisés, la liste matches est vide.
 
 ---
 
@@ -287,12 +357,11 @@ visibility:
 
 ---
 
-## 🛡️ Gestion des Erreurs
+## 🛡️ Gestion des indisponibilités
 
 En cas de redémarrage de la Freebox ou de mise à jour du firmware :
 
 - Un avertissement unique est inscrit dans les journaux de Home Assistant lors de la perte de communication.
-- Dès l'indisponibilité de la Freebox, l'intégration signale l'échec au `DataUpdateCoordinator` de Home Assistant.
 - Dès le retour en ligne de la Freebox, la session est automatiquement ré-authentifiée et l'intervalle de balayage d'origine est rétabli, sans nécessiter de redémarrage de Home Assistant.
 
 ---
@@ -301,7 +370,8 @@ En cas de redémarrage de la Freebox ou de mise à jour du firmware :
 
 - Vérifiez que votre Freebox est accessible sur le réseau local
 - Assurez-vous que Home Assistant peut communiquer avec la Freebox
-- Consultez les logs : **Paramètres → Système → Journaux**
+- Consultez les logs : **Paramètres → Système → Journaux**\
+[![Open your Home Assistant instance and show your Home Assistant logs.](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/)
 
 > [!NOTE]
 > **Diagnostics & Vie privée :**\
@@ -317,4 +387,4 @@ En cas de redémarrage de la Freebox ou de mise à jour du firmware :
 
 ### CREDITS
 
-*Inspiré de [https://github.com/jystervinou/freebox-caller-id](https://github.com/jystervinou/freebox-caller-id) et largement fait avec l'IA*
+*Inspiré de [https://github.com/jystervinou/freebox-caller-id](https://github.com/jystervinou/freebox-caller-id) et largement construit avec le support de l'IA*

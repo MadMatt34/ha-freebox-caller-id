@@ -1,0 +1,13 @@
+contact_by_number:
+  fields:
+    phone_number:
+      required: true
+      selector:
+        text:
+
+contact_by_name:
+  fields:
+    name:
+      required: true
+      selector:
+        text:
