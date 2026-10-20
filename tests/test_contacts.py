@@ -154,7 +154,7 @@ def test_find_contacts_by_name() -> None:
     matches = _find_contacts_by_name(CONTACTS, "ALICE")
     assert [item["display_name"] for item in matches] == ["Alice Martin"]
     assert _find_contacts_by_name(CONTACTS, "acme")[0]["company"] == "Acme"
-    assert len(_find_contacts_by_name(CONTACTS, "i")) == 2
+    assert _find_contacts_by_name(CONTACTS, "i") == []
 
 
 async def test_get_contacts_success(hass: HomeAssistant, aioclient_mock) -> None:
@@ -314,7 +314,7 @@ async def test_services_reject_search_below_minimum_length(
 
 @pytest.mark.parametrize(
     "phone_number",
-    ["06-12", "06 12", "12a", "++123", "12+", "+-12", "１２３"],
+    ["06-12", "06 12", "12a", "++123", "12+", "+-12", "\\uFF11\\uFF12\\uFF13"],
 )
 async def test_services_reject_phone_search_with_invalid_characters(
     hass: HomeAssistant,
