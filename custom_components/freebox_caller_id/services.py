@@ -139,43 +139,15 @@ def _phone_number_variants(
     return variants
 
 
-def _validate_phone_search_schema(value: dict[str, str]) -> dict[str, str]:
-    """Reject invalid or too-short phone searches before running the handler."""
-    phone_number = value["phone_number"]
-    if not phone_number.strip():
-        return value
-
-    validation_error = _phone_search_error(phone_number)
-    if validation_error is not None:
-        raise ServiceValidationError(
-            translation_domain=DOMAIN,
-            translation_key=validation_error,
-        )
-    return value
-
-
-def _validate_name_search_schema(value: dict[str, str]) -> dict[str, str]:
-    """Reject too-short name searches before running the handler."""
-    name = value["name"].strip()
-    if name and len(name) < MIN_SEARCH_LENGTH:
-        raise ServiceValidationError(
-            translation_domain=DOMAIN,
-            translation_key="search_too_short",
-        )
-    return value
-
-
 _CONTACT_BY_NUMBER_SCHEMA = vol.Schema(
-    vol.All(
-        {vol.Required("phone_number"): cv.string},
-        _validate_phone_search_schema,
-    )
+    {
+        vol.Required("phone_number"): cv.string,
+    }
 )
 _CONTACT_BY_NAME_SCHEMA = vol.Schema(
-    vol.All(
-        {vol.Required("name"): cv.string},
-        _validate_name_search_schema,
-    )
+    {
+        vol.Required("name"): cv.string,
+    }
 )
 
 
@@ -353,6 +325,10 @@ def async_setup_services(hass: HomeAssistant) -> None:
             )
 
         validation_error = _phone_search_error(phone_number)
+        if validation_error == "search_too_short":
+            # Never query the Freebox for a search shorter than the minimum.
+            response: FreeboxContactLookupResponse = {"matches": []}
+            return response
         if validation_error is not None:
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
@@ -384,10 +360,9 @@ def async_setup_services(hass: HomeAssistant) -> None:
             )
 
         if len(name) < MIN_SEARCH_LENGTH:
-            raise ServiceValidationError(
-                translation_domain=DOMAIN,
-                translation_key="search_too_short",
-            )
+            # Never query the Freebox for a search shorter than the minimum.
+            response: FreeboxContactLookupResponse = {"matches": []}
+            return response
 
         coordinator = _get_coordinator(hass)
         try:
