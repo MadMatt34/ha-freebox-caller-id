@@ -59,11 +59,11 @@
   "services": {
     "contact_by_number": {
       "name": "Find contact by phone number",
-      "description": "Search the Freebox phonebook by a full phone number or any part of it. Formatting and equivalent national/international forms are normalized, including +33 and the French leading 0.",
+      "description": "Search contacts using a full or partial number containing at least 3 digits. Enter digits only, optionally with a leading +. National-format searches are interpreted as French; explicit international calling codes remain distinct.",
       "fields": {
         "phone_number": {
           "name": "Phone number",
-          "description": "Enter a complete phone number or any digit sequence. For French numbers, +33/0033 and the national leading 0 are treated as equivalent."
+          "description": "At least 3 digits; digits only, optionally with a leading +. Searches without an international calling code are interpreted as French."
         }
       }
     },
