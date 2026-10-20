@@ -149,6 +149,8 @@ def test_find_contacts_by_number_ignores_country_prefix(
 
 def test_find_contacts_by_name() -> None:
     """Match name fields case-insensitively and allow multiple results."""
+    assert _find_contacts_by_name(CONTACTS, "Al") == []
+    assert _find_contacts_by_name(CONTACTS, "  Al  ") == []
     matches = _find_contacts_by_name(CONTACTS, "ALICE")
     assert [item["display_name"] for item in matches] == ["Alice Martin"]
     assert _find_contacts_by_name(CONTACTS, "acme")[0]["company"] == "Acme"
@@ -279,6 +281,56 @@ async def test_services_empty_search_is_rejected(
             blocking=True,
             return_response=True,
         )
+
+
+@pytest.mark.parametrize(
+    ("service_name", "input_key", "input_value"),
+    [
+        ("contact_by_number", "phone_number", "1"),
+        ("contact_by_number", "phone_number", "12"),
+        ("contact_by_name", "name", "A"),
+        ("contact_by_name", "name", "Al"),
+        ("contact_by_name", "name", " A "),
+    ],
+)
+async def test_services_reject_search_below_minimum_length(
+    hass: HomeAssistant,
+    service_name: str,
+    input_key: str,
+    input_value: str,
+) -> None:
+    """Reject short search strings before requesting contacts from the Freebox."""
+    async_setup_services(hass)
+    with pytest.raises(ServiceValidationError) as exc_info:
+        await hass.services.async_call(
+            DOMAIN,
+            service_name,
+            {input_key: input_value},
+            blocking=True,
+            return_response=True,
+        )
+    assert exc_info.value.translation_key == "search_too_short"
+
+
+@pytest.mark.parametrize(
+    "phone_number",
+    ["06-12", "06 12", "12a", "++123", "12+", "+-12", "１２３"],
+)
+async def test_services_reject_phone_search_with_invalid_characters(
+    hass: HomeAssistant,
+    phone_number: str,
+) -> None:
+    """Reject phone searches containing non-ASCII digits or invalid punctuation."""
+    async_setup_services(hass)
+    with pytest.raises(ServiceValidationError) as exc_info:
+        await hass.services.async_call(
+            DOMAIN,
+            "contact_by_number",
+            {"phone_number": phone_number},
+            blocking=True,
+            return_response=True,
+        )
+    assert exc_info.value.translation_key == "invalid_phone_number"
 
 
 @pytest.mark.parametrize(("service_name", "input_key", "input_value"), SERVICE_INPUTS)
