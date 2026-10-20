@@ -85,11 +85,15 @@ def test_find_contacts_by_number_rejects_short_or_invalid_query() -> None:
 
 
 def test_find_contacts_by_number_accepts_partial_number() -> None:
-    """Match a partial digit sequence within a stored phone number."""
+    """Search fragments globally when no country code is explicitly supplied."""
     contacts: list[FreeboxContact] = [
         {
             "display_name": "Alice",
             "numbers": [{"number": "+33 6 12 34 56 78"}],
+        },
+        {
+            "display_name": "American",
+            "numbers": [{"number": "+1 612 345 6789"}],
         },
         {
             "display_name": "Bob",
@@ -99,7 +103,7 @@ def test_find_contacts_by_number_accepts_partial_number() -> None:
 
     matches = _find_contacts_by_number(contacts, "3456")
 
-    assert [item["display_name"] for item in matches] == ["Alice"]
+    assert [item["display_name"] for item in matches] == ["Alice", "American"]
 
 
 def test_find_contacts_by_number_partial_with_country_prefix() -> None:
@@ -306,9 +310,18 @@ async def test_services_reject_search_below_minimum_length(
     input_key: str,
     input_value: str,
 ) -> None:
-    """Reject short search strings before requesting contacts from the Freebox."""
+    """Reject short searches before requesting contacts or returning results."""
+    coordinator = MagicMock()
+    coordinator.async_get_contacts = AsyncMock(return_value=CONTACTS)
     async_setup_services(hass)
-    with pytest.raises(ServiceValidationError) as exc_info:
+    with (
+        patch.object(
+            hass.config_entries,
+            "async_entries",
+            return_value=[_loaded_entry(coordinator)],
+        ),
+        pytest.raises(ServiceValidationError) as exc_info,
+    ):
         await hass.services.async_call(
             DOMAIN,
             service_name,
@@ -317,6 +330,7 @@ async def test_services_reject_search_below_minimum_length(
             return_response=True,
         )
     assert exc_info.value.translation_key == "search_too_short"
+    coordinator.async_get_contacts.assert_not_awaited()
 
 
 @pytest.mark.parametrize(
