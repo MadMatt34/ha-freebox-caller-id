@@ -67,9 +67,7 @@ def _phone_number_variants(number: str) -> set[str]:
     except phonenumbers.NumberParseException:
         return variants
 
-    national_significant_number = phonenumbers.national_significant_number(
-        parsed_number
-    )
+    national_significant_number = phonenumbers.national_significant_number(parsed_number)
     if national_significant_number:
         variants.add(national_significant_number)
         # French national notation adds a leading zero to the significant number.
