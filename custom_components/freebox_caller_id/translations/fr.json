@@ -59,11 +59,11 @@
   "services": {
     "contact_by_number": {
       "name": "Rechercher un contact par numéro",
-      "description": "Recherche les contacts du carnet d'adresses Freebox associés au numéro indiqué. Les différences de mise en forme sont ignorées.",
+      "description": "Recherche les contacts du carnet d'adresses Freebox à partir d'un numéro complet ou d'une partie du numéro. Les formats équivalents national et international sont normalisés, notamment +33 et le 0 national français.",
       "fields": {
         "phone_number": {
           "name": "Numéro de téléphone",
-          "description": "Le numéro à rechercher. Seules les différences de mise en forme sont ignorées."
+          "description": "Saisissez un numéro complet ou une suite de chiffres. Pour les numéros français, +33/0033 et le 0 national sont considérés comme équivalents."
         }
       }
     },

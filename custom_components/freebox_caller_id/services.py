@@ -6,6 +6,8 @@ from collections.abc import Mapping
 import re
 from typing import cast
 
+import phonenumbers
+
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigEntryAuthFailed,
@@ -51,9 +53,39 @@ _CONTACT_BY_NAME_SCHEMA = vol.Schema(
 )
 
 
-def _normalize_phone_number(number: str) -> str:
-    """Remove common formatting characters without changing country codes."""
-    return _PHONE_FORMATTING.sub("", number).strip()
+def _phone_number_variants(number: str) -> set[str]:
+    """Return digit-only variants for full and partial number matching.
+
+    National numbers use France as the default region. Explicit international
+    prefixes are interpreted by phonenumbers so equivalent national and
+    international representations can be compared.
+    """
+    digits = re.sub(r"\D", "", number)
+    if not digits:
+        return set()
+
+    variants = {digits}
+    try:
+        parsed_number = phonenumbers.parse(number, "FR")
+    except phonenumbers.NumberParseException:
+        return variants
+
+    if not phonenumbers.is_possible_number(parsed_number):
+        return variants
+
+    for number_format in (
+        phonenumbers.PhoneNumberFormat.E164,
+        phonenumbers.PhoneNumberFormat.NATIONAL,
+    ):
+        formatted_number = phonenumbers.format_number(
+            parsed_number,
+            number_format,
+        )
+        formatted_digits = re.sub(r"\D", "", formatted_number)
+        if formatted_digits:
+            variants.add(formatted_digits)
+
+    return variants
 
 
 def _contact_result(
@@ -103,8 +135,11 @@ def _find_contacts_by_number(
     contacts: list[FreeboxContact],
     phone_number: str,
 ) -> list[FreeboxContactResult]:
-    """Find contacts by an exact number match, ignoring formatting."""
-    searched_number = _normalize_phone_number(phone_number)
+    """Find contacts by a full number or any digit sequence."""
+    searched_variants = _phone_number_variants(phone_number)
+    if not searched_variants:
+        return []
+
     matches: list[FreeboxContactResult] = []
 
     for contact in contacts:
@@ -115,7 +150,15 @@ def _find_contacts_by_number(
             if not isinstance(item, Mapping):
                 continue
             number = item.get("number")
-            if isinstance(number, str) and _normalize_phone_number(number) == searched_number:
+            if not isinstance(number, str) or not number:
+                continue
+
+            contact_variants = _phone_number_variants(number)
+            if any(
+                searched in candidate
+                for searched in searched_variants
+                for candidate in contact_variants
+            ):
                 matches.append(_contact_result(contact, matched_number=number))
                 break
 

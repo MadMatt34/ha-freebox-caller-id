@@ -77,6 +77,50 @@ def test_find_contacts_by_number() -> None:
     assert _find_contacts_by_number(CONTACTS, "0612345670") == []
 
 
+def test_find_contacts_by_number_accepts_partial_number() -> None:
+    """Match a partial digit sequence within a stored phone number."""
+    contacts: list[FreeboxContact] = [
+        {
+            "display_name": "Alice",
+            "numbers": [{"number": "+33 6 12 34 56 78"}],
+        },
+        {
+            "display_name": "Bob",
+            "numbers": [{"number": "01 98 76 54 32"}],
+        },
+    ]
+
+    matches = _find_contacts_by_number(contacts, "3456")
+
+    assert [item["display_name"] for item in matches] == ["Alice"]
+
+
+@pytest.mark.parametrize(
+    ("stored_number", "searched_number"),
+    [
+        ("06 12 34 56 78", "+33 6 12 34 56 78"),
+        ("+33 6 12 34 56 78", "06.12.34.56.78"),
+        ("0033 6 12 34 56 78", "0612345678"),
+    ],
+)
+def test_find_contacts_by_number_ignores_country_prefix(
+    stored_number: str,
+    searched_number: str,
+) -> None:
+    """Match equivalent French national and international formats."""
+    contacts: list[FreeboxContact] = [
+        {
+            "display_name": "Alice",
+            "numbers": [{"number": stored_number}],
+        },
+    ]
+
+    matches = _find_contacts_by_number(contacts, searched_number)
+
+    assert len(matches) == 1
+    assert matches[0]["display_name"] == "Alice"
+
+
 def test_find_contacts_by_name() -> None:
     """Match name fields case-insensitively and allow multiple results."""
     matches = _find_contacts_by_name(CONTACTS, "ALICE")
