@@ -304,32 +304,29 @@ async def test_services_empty_search_is_rejected(
         ("contact_by_name", "name", " A "),
     ],
 )
-async def test_services_reject_search_below_minimum_length(
+async def test_services_return_no_matches_for_search_below_minimum_length(
     hass: HomeAssistant,
     service_name: str,
     input_key: str,
     input_value: str,
 ) -> None:
-    """Reject short searches before requesting contacts or returning results."""
+    """Return an empty result without fetching contacts for a short search."""
     coordinator = MagicMock()
     coordinator.async_get_contacts = AsyncMock(return_value=CONTACTS)
     async_setup_services(hass)
-    with (
-        patch.object(
-            hass.config_entries,
-            "async_entries",
-            return_value=[_loaded_entry(coordinator)],
-        ),
-        pytest.raises(ServiceValidationError) as exc_info,
+    with patch.object(
+        hass.config_entries,
+        "async_entries",
+        return_value=[_loaded_entry(coordinator)],
     ):
-        await hass.services.async_call(
+        result = await hass.services.async_call(
             DOMAIN,
             service_name,
             {input_key: input_value},
             blocking=True,
             return_response=True,
         )
-    assert exc_info.value.translation_key == "search_too_short"
+    assert result == {"matches": []}
     coordinator.async_get_contacts.assert_not_awaited()
 
 
