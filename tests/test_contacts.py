@@ -70,11 +70,18 @@ def _create_coordinator(hass: HomeAssistant) -> FreeboxCallerCoordinator:
 
 def test_find_contacts_by_number() -> None:
     """Match exact numbers while ignoring common display formatting."""
-    matches = _find_contacts_by_number(CONTACTS, "06-12-34-56-78")
+    matches = _find_contacts_by_number(CONTACTS, "0612345678")
     assert len(matches) == 1
     assert matches[0]["display_name"] == "Alice Martin"
     assert matches[0]["matched_number"] == "06 12 34 56 78"
     assert _find_contacts_by_number(CONTACTS, "0612345670") == []
+
+
+def test_find_contacts_by_number_rejects_short_or_invalid_query() -> None:
+    """Direct searches must also enforce input validation."""
+    assert _find_contacts_by_number(CONTACTS, "12") == []
+    assert _find_contacts_by_number(CONTACTS, "06-12") == []
+    assert _find_contacts_by_number(CONTACTS, "+") == []
 
 
 def test_find_contacts_by_number_accepts_partial_number() -> None:
@@ -104,7 +111,7 @@ def test_find_contacts_by_number_partial_with_country_prefix() -> None:
         },
     ]
 
-    matches = _find_contacts_by_number(contacts, "+33 6123")
+    matches = _find_contacts_by_number(contacts, "+336123")
 
     assert [item["display_name"] for item in matches] == ["Alice"]
 
@@ -116,7 +123,7 @@ def test_find_contacts_by_number_does_not_mix_countries() -> None:
         {"display_name": "American", "numbers": [{"number": "+1 612 345 6789"}]},
     ]
 
-    matches = _find_contacts_by_number(contacts, "+1 612")
+    matches = _find_contacts_by_number(contacts, "+1612")
 
     assert [item["display_name"] for item in matches] == ["American"]
 
@@ -124,8 +131,8 @@ def test_find_contacts_by_number_does_not_mix_countries() -> None:
 @pytest.mark.parametrize(
     ("stored_number", "searched_number"),
     [
-        ("06 12 34 56 78", "+33 6 12 34 56 78"),
-        ("+33 6 12 34 56 78", "06.12.34.56.78"),
+        ("06 12 34 56 78", "+33612345678"),
+        ("+33 6 12 34 56 78", "0612345678"),
         ("0033 6 12 34 56 78", "0612345678"),
     ],
 )
@@ -149,10 +156,12 @@ def test_find_contacts_by_number_ignores_country_prefix(
 
 def test_find_contacts_by_name() -> None:
     """Match name fields case-insensitively and allow multiple results."""
+    assert _find_contacts_by_name(CONTACTS, "Al") == []
+    assert _find_contacts_by_name(CONTACTS, "  Al  ") == []
     matches = _find_contacts_by_name(CONTACTS, "ALICE")
     assert [item["display_name"] for item in matches] == ["Alice Martin"]
     assert _find_contacts_by_name(CONTACTS, "acme")[0]["company"] == "Acme"
-    assert len(_find_contacts_by_name(CONTACTS, "i")) == 2
+    assert _find_contacts_by_name(CONTACTS, "i") == []
 
 
 async def test_get_contacts_success(hass: HomeAssistant, aioclient_mock) -> None:
@@ -279,6 +288,56 @@ async def test_services_empty_search_is_rejected(
             blocking=True,
             return_response=True,
         )
+
+
+@pytest.mark.parametrize(
+    ("service_name", "input_key", "input_value"),
+    [
+        ("contact_by_number", "phone_number", "1"),
+        ("contact_by_number", "phone_number", "12"),
+        ("contact_by_name", "name", "A"),
+        ("contact_by_name", "name", "Al"),
+        ("contact_by_name", "name", " A "),
+    ],
+)
+async def test_services_reject_search_below_minimum_length(
+    hass: HomeAssistant,
+    service_name: str,
+    input_key: str,
+    input_value: str,
+) -> None:
+    """Reject short search strings before requesting contacts from the Freebox."""
+    async_setup_services(hass)
+    with pytest.raises(ServiceValidationError) as exc_info:
+        await hass.services.async_call(
+            DOMAIN,
+            service_name,
+            {input_key: input_value},
+            blocking=True,
+            return_response=True,
+        )
+    assert exc_info.value.translation_key == "search_too_short"
+
+
+@pytest.mark.parametrize(
+    "phone_number",
+    ["06-12", "06 12", "12a", "++123", "12+", "+-12", " 123", "123 "],
+)
+async def test_services_reject_phone_search_with_invalid_characters(
+    hass: HomeAssistant,
+    phone_number: str,
+) -> None:
+    """Reject phone searches containing non-ASCII digits or invalid punctuation."""
+    async_setup_services(hass)
+    with pytest.raises(ServiceValidationError) as exc_info:
+        await hass.services.async_call(
+            DOMAIN,
+            "contact_by_number",
+            {"phone_number": phone_number},
+            blocking=True,
+            return_response=True,
+        )
+    assert exc_info.value.translation_key == "invalid_phone_number"
 
 
 @pytest.mark.parametrize(("service_name", "input_key", "input_value"), SERVICE_INPUTS)

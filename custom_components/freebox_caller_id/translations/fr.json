@@ -95,7 +95,7 @@
       "message": "Le numéro doit contenir uniquement des chiffres et éventuellement un + au début."
     },
     "search_too_short": {
-      "message": "La recherche doit contenir au moins 3 caractères."
+      "message": "Une recherche par nom doit contenir au moins 3 caractères ; une recherche par numéro, au moins 3 chiffres."
     },
     "contacts_permission_denied": {
       "message": "L'accès au carnet d'adresses de la Freebox n'est pas autorisé. Dans Freebox OS, ouvrez Paramètres > Gestion des accès > Applications > HA CallerID et activez l'accès aux contacts."
