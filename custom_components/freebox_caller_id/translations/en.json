@@ -95,7 +95,7 @@
       "message": "The number must contain only digits and optionally a + at the beginning."
     },
     "search_too_short": {
-      "message": "Search must contain at least 3 characters."
+      "message": "Name searches must contain at least 3 characters; phone-number searches must contain at least 3 digits."
     },
     "contacts_permission_denied": {
       "message": "Access to the Freebox contact list is not authorized. In Freebox OS, open Settings > Access Management > Applications > HA CallerID and enable access to contacts."
