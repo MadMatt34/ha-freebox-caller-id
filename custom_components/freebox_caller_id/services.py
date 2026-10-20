@@ -101,11 +101,7 @@ def _phone_number_variants(
     if not has_explicit_prefix and not assume_french_national:
         return variants
 
-    default_region = (
-        "FR"
-        if normalized_number.startswith("00") or assume_french_national
-        else None
-    )
+    default_region = "FR" if normalized_number.startswith("00") or assume_french_national else None
     try:
         parsed_number = phonenumbers.parse(normalized_number, default_region)
     except phonenumbers.NumberParseException:
