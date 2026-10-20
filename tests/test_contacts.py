@@ -81,9 +81,14 @@ def test_find_contacts_by_number() -> None:
 
 
 def test_find_contacts_by_number_rejects_short_or_invalid_query() -> None:
-    """Direct searches must also enforce input validation."""
+    """Reject short and malformed input while accepting formatted numbers."""
     assert _find_contacts_by_number(CONTACTS, "12") == []
-    assert _find_contacts_by_number(CONTACTS, "06-12") == []
+    assert _find_contacts_by_number(CONTACTS, "1-2") == []
+    assert _find_contacts_by_number(CONTACTS, "06-12") == _find_contacts_by_number(
+        CONTACTS,
+        "0612",
+    )
+    assert _find_contacts_by_number(CONTACTS, "++123") == []
     assert _find_contacts_by_number(CONTACTS, "+") == []
 
 
