@@ -269,8 +269,8 @@ def async_setup_services(hass: HomeAssistant) -> None:
 
     async def async_contact_by_number(call: ServiceCall) -> ServiceResponse:
         """Find a contact by phone number."""
-        phone_number = call.data["phone_number"].strip()
-        if not phone_number:
+        phone_number = call.data["phone_number"]
+        if not phone_number.strip():
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="empty_phone_number",
