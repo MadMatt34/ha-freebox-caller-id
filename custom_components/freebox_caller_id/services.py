@@ -51,6 +51,15 @@ _CONTACT_BY_NAME_SCHEMA = vol.Schema(
 )
 
 
+def _phone_search_error(phone_number: str) -> str | None:
+    """Return the validation error key for a phone-number search, if any."""
+    if not re.fullmatch(r"\+?[0-9]+", phone_number):
+        return "invalid_phone_number"
+    if sum("0" <= character <= "9" for character in phone_number) < MIN_SEARCH_LENGTH:
+        return "search_too_short"
+    return None
+
+
 def _phone_country_code(number: str) -> int | None:
     """Return the parsed country calling code, assuming France for national input."""
     try:
@@ -149,6 +158,9 @@ def _find_contacts_by_number(
     phone_number: str,
 ) -> list[FreeboxContactResult]:
     """Find contacts by a full number or any digit sequence."""
+    if _phone_search_error(phone_number) is not None:
+        return []
+
     searched_variants = _phone_number_variants(phone_number)
     if not searched_variants:
         return []
@@ -193,7 +205,10 @@ def _find_contacts_by_name(
     name: str,
 ) -> list[FreeboxContactResult]:
     """Find contacts by case-insensitive substring in their name fields."""
-    searched_name = name.casefold()
+    searched_name = name.strip()
+    if len(searched_name) < MIN_SEARCH_LENGTH:
+        return []
+    searched_name = searched_name.casefold()
     matches: list[FreeboxContactResult] = []
 
     for contact in contacts:
@@ -261,15 +276,11 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 translation_key="empty_phone_number",
             )
 
-        if not re.fullmatch(r"\+?[0-9]+", phone_number):
+        validation_error = _phone_search_error(phone_number)
+        if validation_error is not None:
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
-                translation_key="invalid_phone_number",
-            )
-        if sum(character.isdigit() for character in phone_number) < MIN_SEARCH_LENGTH:
-            raise ServiceValidationError(
-                translation_domain=DOMAIN,
-                translation_key="search_too_short",
+                translation_key=validation_error,
             )
 
         coordinator = _get_coordinator(hass)
