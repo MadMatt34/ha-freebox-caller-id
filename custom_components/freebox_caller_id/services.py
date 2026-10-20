@@ -39,17 +39,6 @@ SERVICE_CONTACT_BY_NUMBER = "contact_by_number"
 SERVICE_CONTACT_BY_NAME = "contact_by_name"
 MIN_SEARCH_LENGTH = 3
 
-_CONTACT_BY_NUMBER_SCHEMA = vol.Schema(
-    {
-        vol.Required("phone_number"): cv.string,
-    }
-)
-_CONTACT_BY_NAME_SCHEMA = vol.Schema(
-    {
-        vol.Required("name"): cv.string,
-    }
-)
-
 
 def _phone_search_error(phone_number: str) -> str | None:
     """Return the validation error key for a phone-number search, if any."""
@@ -60,35 +49,79 @@ def _phone_search_error(phone_number: str) -> str | None:
     return None
 
 
-def _phone_country_code(number: str) -> int | None:
-    """Return the parsed country calling code, assuming France for national input."""
+def _has_explicit_international_prefix(number: str) -> bool:
+    """Return whether a number explicitly starts with an international prefix."""
+    normalized_number = number.strip()
+    return normalized_number.startswith("+") or normalized_number.startswith("00")
+
+
+def _phone_country_code(
+    number: str,
+    *,
+    assume_french_national: bool = False,
+) -> int | None:
+    """Return a known country calling code without guessing for search fragments."""
+    normalized_number = number.strip()
+    has_explicit_prefix = _has_explicit_international_prefix(normalized_number)
+    if not has_explicit_prefix and not assume_french_national:
+        return None
+
+    default_region = "FR" if normalized_number.startswith("00") or assume_french_national else None
     try:
-        return phonenumbers.parse(number, "FR").country_code
+        parsed_number = phonenumbers.parse(normalized_number, default_region)
     except phonenumbers.NumberParseException:
         return None
 
+    # A stored national number is treated as French only when it resembles a
+    # complete phone number. Short fragments must never acquire a country code.
+    if not has_explicit_prefix and not phonenumbers.is_possible_number(parsed_number):
+        return None
 
-def _phone_number_variants(number: str) -> set[str]:
-    """Return digit-only variants for full and partial number matching.
+    return parsed_number.country_code
 
-    National numbers use France as the default region. Explicit international
-    prefixes are interpreted by phonenumbers so equivalent national and
-    international representations can be compared.
+
+def _phone_number_variants(
+    number: str,
+    *,
+    assume_french_national: bool = False,
+) -> set[str]:
+    """Return digit-only variants without assigning a country to search fragments.
+
+    Explicit international prefixes are parsed directly. Stored national-format
+    contact numbers may be normalized as French full numbers so they can match
+    an explicit international query or its national representation.
     """
-    digits = re.sub(r"\D", "", number)
+    normalized_number = number.strip()
+    digits = re.sub(r"\D", "", normalized_number)
     if not digits:
         return set()
 
     variants = {digits}
+    has_explicit_prefix = _has_explicit_international_prefix(normalized_number)
+    if not has_explicit_prefix and not assume_french_national:
+        return variants
+
+    default_region = (
+        "FR"
+        if normalized_number.startswith("00") or assume_french_national
+        else None
+    )
     try:
-        parsed_number = phonenumbers.parse(number, "FR")
+        parsed_number = phonenumbers.parse(normalized_number, default_region)
     except phonenumbers.NumberParseException:
+        return variants
+
+    # Do not normalize an incomplete stored number by assuming it is French.
+    if (
+        assume_french_national
+        and not has_explicit_prefix
+        and not phonenumbers.is_possible_number(parsed_number)
+    ):
         return variants
 
     national_significant_number = phonenumbers.national_significant_number(parsed_number)
     if national_significant_number:
         variants.add(national_significant_number)
-        # French national notation adds a leading zero to the significant number.
         if parsed_number.country_code == 33:
             variants.add(f"0{national_significant_number}")
 
@@ -108,6 +141,46 @@ def _phone_number_variants(number: str) -> set[str]:
             variants.add(formatted_digits)
 
     return variants
+
+
+def _validate_phone_search_schema(value: dict[str, str]) -> dict[str, str]:
+    """Reject invalid or too-short phone searches before running the handler."""
+    phone_number = value["phone_number"]
+    if not phone_number.strip():
+        return value
+
+    validation_error = _phone_search_error(phone_number)
+    if validation_error is not None:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key=validation_error,
+        )
+    return value
+
+
+def _validate_name_search_schema(value: dict[str, str]) -> dict[str, str]:
+    """Reject too-short name searches before running the handler."""
+    name = value["name"].strip()
+    if name and len(name) < MIN_SEARCH_LENGTH:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="search_too_short",
+        )
+    return value
+
+
+_CONTACT_BY_NUMBER_SCHEMA = vol.Schema(
+    vol.All(
+        {vol.Required("phone_number"): cv.string},
+        _validate_phone_search_schema,
+    )
+)
+_CONTACT_BY_NAME_SCHEMA = vol.Schema(
+    vol.All(
+        {vol.Required("name"): cv.string},
+        _validate_name_search_schema,
+    )
+)
 
 
 def _contact_result(
@@ -165,6 +238,8 @@ def _find_contacts_by_number(
     if not searched_variants:
         return []
 
+    # Only an explicit international prefix on the query constrains the country.
+    searched_country = _phone_country_code(phone_number)
     matches: list[FreeboxContactResult] = []
 
     for contact in contacts:
@@ -179,8 +254,10 @@ def _find_contacts_by_number(
                 continue
 
             # Do not match coincidentally similar digits across different countries.
-            searched_country = _phone_country_code(phone_number)
-            contact_country = _phone_country_code(number)
+            contact_country = _phone_country_code(
+                number,
+                assume_french_national=True,
+            )
             if (
                 searched_country is not None
                 and contact_country is not None
@@ -188,7 +265,10 @@ def _find_contacts_by_number(
             ):
                 continue
 
-            contact_variants = _phone_number_variants(number)
+            contact_variants = _phone_number_variants(
+                number,
+                assume_french_national=True,
+            )
             if any(
                 searched in candidate
                 for searched in searched_variants
