@@ -77,6 +77,8 @@ def test_find_contacts_by_number() -> None:
     assert _find_contacts_by_number(CONTACTS, "06-12-34-56-78") == matches
     assert _find_contacts_by_number(CONTACTS, "06.12.34.56.78") == matches
     assert _find_contacts_by_number(CONTACTS, "06 12-34.56 78") == matches
+    assert _find_contacts_by_number(CONTACTS, "+33 (0)6 12 34 56 78") == matches
+    assert _find_contacts_by_number(CONTACTS, "+33 (0) 6-12.34.56 78") == matches
     assert _find_contacts_by_number(CONTACTS, "0612345670") == []
 
 
@@ -90,6 +92,9 @@ def test_find_contacts_by_number_rejects_short_or_invalid_query() -> None:
     )
     assert _find_contacts_by_number(CONTACTS, "++123") == []
     assert _find_contacts_by_number(CONTACTS, "+") == []
+    assert _find_contacts_by_number(CONTACTS, "+33 (06 12 34 56 78") == []
+    assert _find_contacts_by_number(CONTACTS, "+33 06 12 34 56 78)") == []
+    assert _find_contacts_by_number(CONTACTS, "+33 ((0)) 6 12 34 56 78") == []
 
 
 def test_find_contacts_by_number_accepts_partial_number() -> None:
@@ -372,7 +377,7 @@ async def test_services_return_no_matches_for_search_below_minimum_length(
 
 @pytest.mark.parametrize(
     "phone_number",
-    ["12a", "++123", "12+", "+-12", "12/34", "06_12"],
+    ["12a", "++123", "12+", "+-12", "12/34", "06_12", "+33 (06 12", "+33 06 12)"],
 )
 async def test_services_reject_phone_search_with_invalid_characters(
     hass: HomeAssistant,
