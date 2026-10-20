@@ -38,8 +38,6 @@ from .types import (
 SERVICE_CONTACT_BY_NUMBER = "contact_by_number"
 SERVICE_CONTACT_BY_NAME = "contact_by_name"
 
-_PHONE_FORMATTING = re.compile(r"[\s().-]+")
-
 _CONTACT_BY_NUMBER_SCHEMA = vol.Schema(
     {
         vol.Required("phone_number"): cv.string,
@@ -68,6 +66,15 @@ def _phone_number_variants(number: str) -> set[str]:
         parsed_number = phonenumbers.parse(number, "FR")
     except phonenumbers.NumberParseException:
         return variants
+
+    national_significant_number = phonenumbers.national_significant_number(
+        parsed_number
+    )
+    if national_significant_number:
+        variants.add(national_significant_number)
+        # French national notation adds a leading zero to the significant number.
+        if parsed_number.country_code == 33:
+            variants.add(f"0{national_significant_number}")
 
     if not phonenumbers.is_possible_number(parsed_number):
         return variants

@@ -103,6 +103,20 @@ def test_find_contacts_by_number_accepts_partial_number() -> None:
         ("0033 6 12 34 56 78", "0612345678"),
     ],
 )
+def test_find_contacts_by_number_partial_with_country_prefix() -> None:
+    """Match partial international input after ignoring the country prefix."""
+    contacts: list[FreeboxContact] = [
+        {
+            "display_name": "Alice",
+            "numbers": [{"number": "06 12 34 56 78"}],
+        },
+    ]
+
+    matches = _find_contacts_by_number(contacts, "+33 6123")
+
+    assert [item["display_name"] for item in matches] == ["Alice"]
+
+
 def test_find_contacts_by_number_ignores_country_prefix(
     stored_number: str,
     searched_number: str,
