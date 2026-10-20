@@ -1,10 +1,5 @@
 contact_by_number:
   fields:
-    config_entry_id:
-      required: true
-      selector:
-        config_entry:
-          integration: freebox_caller_id
     phone_number:
       required: true
       selector:
@@ -12,11 +7,6 @@ contact_by_number:
 
 contact_by_name:
   fields:
-    config_entry_id:
-      required: true
-      selector:
-        config_entry:
-          integration: freebox_caller_id
     name:
       required: true
       selector:

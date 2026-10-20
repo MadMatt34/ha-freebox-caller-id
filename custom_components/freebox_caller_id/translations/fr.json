@@ -61,10 +61,6 @@
       "name": "Rechercher un contact par numéro",
       "description": "Recherche les contacts du carnet d'adresses Freebox associés au numéro indiqué. Les différences de mise en forme sont ignorées.",
       "fields": {
-        "config_entry_id": {
-          "name": "Intégration Freebox",
-          "description": "L'instance Freebox Caller ID à interroger."
-        },
         "phone_number": {
           "name": "Numéro de téléphone",
           "description": "Le numéro à rechercher. Seules les différences de mise en forme sont ignorées."
@@ -75,10 +71,6 @@
       "name": "Rechercher un contact par nom",
       "description": "Recherche les contacts dont le nom affiché, le prénom, le nom ou l'entreprise contient le texte indiqué. La recherche ne tient pas compte des majuscules.",
       "fields": {
-        "config_entry_id": {
-          "name": "Intégration Freebox",
-          "description": "L'instance Freebox Caller ID à interroger."
-        },
         "name": {
           "name": "Nom",
           "description": "Le nom ou une partie du nom à rechercher."
@@ -88,10 +80,10 @@
   },
   "exceptions": {
     "config_entry_not_found": {
-      "message": "L'entrée de configuration Freebox Caller ID sélectionnée n'existe pas."
+      "message": "Aucune entrée de configuration Freebox Caller ID n'existe."
     },
     "config_entry_not_loaded": {
-      "message": "L'entrée de configuration Freebox Caller ID sélectionnée n'est pas chargée."
+      "message": "L'entrée de configuration Freebox Caller ID n'est pas chargée."
     },
     "empty_phone_number": {
       "message": "Saisissez un numéro de téléphone non vide."

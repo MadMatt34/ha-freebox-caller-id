@@ -41,13 +41,11 @@ _PHONE_FORMATTING = re.compile(r"[\s().-]+")
 
 _CONTACT_BY_NUMBER_SCHEMA = vol.Schema(
     {
-        vol.Required("config_entry_id"): cv.string,
         vol.Required("phone_number"): cv.string,
     }
 )
 _CONTACT_BY_NAME_SCHEMA = vol.Schema(
     {
-        vol.Required("config_entry_id"): cv.string,
         vol.Required("name"): cv.string,
     }
 )
@@ -148,18 +146,16 @@ def _find_contacts_by_name(
     return matches
 
 
-def _get_coordinator(
-    hass: HomeAssistant,
-    config_entry_id: str,
-) -> FreeboxCallerCoordinator:
-    """Return the coordinator for a loaded Freebox Caller ID entry."""
-    entry = hass.config_entries.async_get_entry(config_entry_id)
-    if entry is None or entry.domain != DOMAIN:
+def _get_coordinator(hass: HomeAssistant) -> FreeboxCallerCoordinator:
+    """Return the coordinator for the single configured Freebox Caller ID entry."""
+    entries = hass.config_entries.async_entries(DOMAIN)
+    if not entries:
         raise ServiceValidationError(
             translation_domain=DOMAIN,
             translation_key="config_entry_not_found",
         )
 
+    entry = entries[0]
     if entry.state is not ConfigEntryState.LOADED:
         raise ServiceValidationError(
             translation_domain=DOMAIN,
@@ -199,7 +195,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 translation_key="empty_phone_number",
             )
 
-        coordinator = _get_coordinator(hass, call.data["config_entry_id"])
+        coordinator = _get_coordinator(hass)
         try:
             contacts = await coordinator.async_get_contacts()
         except (
@@ -223,7 +219,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 translation_key="empty_contact_name",
             )
 
-        coordinator = _get_coordinator(hass, call.data["config_entry_id"])
+        coordinator = _get_coordinator(hass)
         try:
             contacts = await coordinator.async_get_contacts()
         except (

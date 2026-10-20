@@ -177,13 +177,13 @@ async def test_services_contact_lookup_success(
     async_setup_services(hass)
     with patch.object(
         hass.config_entries,
-        "async_get_entry",
-        return_value=_loaded_entry(coordinator),
+        "async_entries",
+        return_value=[_loaded_entry(coordinator)],
     ):
         result = await hass.services.async_call(
             DOMAIN,
             service_name,
-            {"config_entry_id": ENTRY_ID, input_key: input_value},
+            {input_key: input_value},
             blocking=True,
             return_response=True,
         )
@@ -205,7 +205,7 @@ async def test_services_empty_search_is_rejected(
         await hass.services.async_call(
             DOMAIN,
             service_name,
-            {"config_entry_id": ENTRY_ID, input_key: "   "},
+            {input_key: "   "},
             blocking=True,
             return_response=True,
         )
@@ -225,15 +225,15 @@ async def test_services_report_contacts_permission_error(
     with (
         patch.object(
             hass.config_entries,
-            "async_get_entry",
-            return_value=_loaded_entry(coordinator),
+            "async_entries",
+            return_value=[_loaded_entry(coordinator)],
         ),
         pytest.raises(HomeAssistantError) as exc_info,
     ):
         await hass.services.async_call(
             DOMAIN,
             service_name,
-            {"config_entry_id": ENTRY_ID, input_key: input_value},
+            {input_key: input_value},
             blocking=True,
             return_response=True,
         )
@@ -254,15 +254,15 @@ async def test_services_report_contacts_api_error(
     with (
         patch.object(
             hass.config_entries,
-            "async_get_entry",
-            return_value=_loaded_entry(coordinator),
+            "async_entries",
+            return_value=[_loaded_entry(coordinator)],
         ),
         pytest.raises(HomeAssistantError) as exc_info,
     ):
         await hass.services.async_call(
             DOMAIN,
             service_name,
-            {"config_entry_id": ENTRY_ID, input_key: input_value},
+            {input_key: input_value},
             blocking=True,
             return_response=True,
         )
@@ -283,15 +283,15 @@ async def test_services_report_invalid_app_token(
     with (
         patch.object(
             hass.config_entries,
-            "async_get_entry",
-            return_value=_loaded_entry(coordinator),
+            "async_entries",
+            return_value=[_loaded_entry(coordinator)],
         ),
         pytest.raises(HomeAssistantError) as exc_info,
     ):
         await hass.services.async_call(
             DOMAIN,
             service_name,
-            {"config_entry_id": ENTRY_ID, input_key: input_value},
+            {input_key: input_value},
             blocking=True,
             return_response=True,
         )
@@ -343,24 +343,13 @@ def test_contact_search_skips_malformed_contact_values() -> None:
     assert _find_contacts_by_name(contacts, "missing") == []
 
 
-def test_get_coordinator_rejects_missing_or_wrong_domain(hass: HomeAssistant) -> None:
-    """Reject missing config entries and entries from another integration."""
+def test_get_coordinator_rejects_missing_entry(hass: HomeAssistant) -> None:
+    """Reject a missing config entry."""
     with (
-        patch.object(hass.config_entries, "async_get_entry", return_value=None),
+        patch.object(hass.config_entries, "async_entries", return_value=[]),
         pytest.raises(ServiceValidationError) as exc_info,
     ):
-        _get_coordinator(hass, ENTRY_ID)
-    assert exc_info.value.translation_key == "config_entry_not_found"
-
-    with (
-        patch.object(
-            hass.config_entries,
-            "async_get_entry",
-            return_value=SimpleNamespace(domain="other", state=ConfigEntryState.LOADED),
-        ),
-        pytest.raises(ServiceValidationError) as exc_info,
-    ):
-        _get_coordinator(hass, ENTRY_ID)
+        _get_coordinator(hass)
     assert exc_info.value.translation_key == "config_entry_not_found"
 
 
@@ -369,12 +358,12 @@ def test_get_coordinator_rejects_not_loaded_entry(hass: HomeAssistant) -> None:
     with (
         patch.object(
             hass.config_entries,
-            "async_get_entry",
-            return_value=SimpleNamespace(domain=DOMAIN, state=ConfigEntryState.NOT_LOADED),
+            "async_entries",
+            return_value=[SimpleNamespace(domain=DOMAIN, state=ConfigEntryState.NOT_LOADED)],
         ),
         pytest.raises(ServiceValidationError) as exc_info,
     ):
-        _get_coordinator(hass, ENTRY_ID)
+        _get_coordinator(hass)
     assert exc_info.value.translation_key == "config_entry_not_loaded"
 
 
