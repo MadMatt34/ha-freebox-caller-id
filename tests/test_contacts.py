@@ -95,14 +95,6 @@ def test_find_contacts_by_number_accepts_partial_number() -> None:
     assert [item["display_name"] for item in matches] == ["Alice"]
 
 
-@pytest.mark.parametrize(
-    ("stored_number", "searched_number"),
-    [
-        ("06 12 34 56 78", "+33 6 12 34 56 78"),
-        ("+33 6 12 34 56 78", "06.12.34.56.78"),
-        ("0033 6 12 34 56 78", "0612345678"),
-    ],
-)
 def test_find_contacts_by_number_partial_with_country_prefix() -> None:
     """Match partial international input after ignoring the country prefix."""
     contacts: list[FreeboxContact] = [
@@ -117,6 +109,14 @@ def test_find_contacts_by_number_partial_with_country_prefix() -> None:
     assert [item["display_name"] for item in matches] == ["Alice"]
 
 
+@pytest.mark.parametrize(
+    ("stored_number", "searched_number"),
+    [
+        ("06 12 34 56 78", "+33 6 12 34 56 78"),
+        ("+33 6 12 34 56 78", "06.12.34.56.78"),
+        ("0033 6 12 34 56 78", "0612345678"),
+    ],
+)
 def test_find_contacts_by_number_ignores_country_prefix(
     stored_number: str,
     searched_number: str,
