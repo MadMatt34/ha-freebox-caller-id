@@ -41,10 +41,18 @@ MIN_SEARCH_LENGTH = 3
 
 
 def _normalize_phone_number(phone_number: str) -> str | None:
-    """Normalize common phone-number formatting to digits and an optional leading plus."""
+    """Normalize phone formatting and remove every complete parenthesized group."""
     normalized_number = phone_number.strip()
-    if not re.fullmatch(r"\+?[0-9]+(?:[ .-][0-9]+)*", normalized_number):
+    normalized_number = re.sub(r"\([^()]*\)", "", normalized_number)
+
+    # Parentheses must be balanced and must not be nested.
+    if "(" in normalized_number or ")" in normalized_number:
         return None
+
+    # Only digits, common separators, and an optional leading plus may remain.
+    if not re.fullmatch(r"\+?[0-9](?:[0-9 .-]*[0-9])?", normalized_number):
+        return None
+
     return re.sub(r"[ .-]", "", normalized_number)
 
 
