@@ -40,11 +40,28 @@ SERVICE_CONTACT_BY_NAME = "contact_by_name"
 MIN_SEARCH_LENGTH = 3
 
 
+def _normalize_phone_number(phone_number: str) -> str | None:
+    """Normalize phone formatting and remove every complete parenthesized group."""
+    normalized_number = phone_number.strip()
+    normalized_number = re.sub(r"\([^()]*\)", "", normalized_number)
+
+    # Parentheses must be balanced and must not be nested.
+    if "(" in normalized_number or ")" in normalized_number:
+        return None
+
+    # Only digits, common separators, and an optional leading plus may remain.
+    if not re.fullmatch(r"\+?[0-9](?:[0-9 .-]*[0-9])?", normalized_number):
+        return None
+
+    return re.sub(r"[ .-]", "", normalized_number)
+
+
 def _phone_search_error(phone_number: str) -> str | None:
     """Return the validation error key for a phone-number search, if any."""
-    if not re.fullmatch(r"\+?[0-9]+", phone_number):
+    normalized_number = _normalize_phone_number(phone_number)
+    if normalized_number is None:
         return "invalid_phone_number"
-    if sum("0" <= character <= "9" for character in phone_number) < MIN_SEARCH_LENGTH:
+    if sum("0" <= character <= "9" for character in normalized_number) < MIN_SEARCH_LENGTH:
         return "search_too_short"
     return None
 
@@ -202,12 +219,16 @@ def _find_contacts_by_number(
     if _phone_search_error(phone_number) is not None:
         return []
 
-    searched_variants = _phone_number_variants(phone_number)
+    normalized_phone_number = _normalize_phone_number(phone_number)
+    if normalized_phone_number is None:
+        return []
+
+    searched_variants = _phone_number_variants(normalized_phone_number)
     if not searched_variants:
         return []
 
     # Only an explicit international prefix on the query constrains the country.
-    searched_country = _phone_country_code(phone_number)
+    searched_country = _phone_country_code(normalized_phone_number)
     matches: list[FreeboxContactResult] = []
 
     for contact in contacts:
@@ -335,6 +356,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 translation_key=validation_error,
             )
 
+        normalized_phone_number = _normalize_phone_number(phone_number)
+        if normalized_phone_number is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="invalid_phone_number",
+            )
+
         coordinator = _get_coordinator(hass)
         try:
             contacts = await coordinator.async_get_contacts()
@@ -346,7 +374,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
             raise _translate_contact_error(err) from err
 
         response: FreeboxContactLookupResponse = {
-            "matches": _find_contacts_by_number(contacts, phone_number),
+            "matches": _find_contacts_by_number(contacts, normalized_phone_number),
         }
         return response
 

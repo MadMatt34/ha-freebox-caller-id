@@ -59,11 +59,11 @@
   "services": {
     "contact_by_number": {
       "name": "Rechercher un contact par numéro",
-      "description": "Recherche les contacts à partir d'un numéro complet ou partiel d'au moins 3 chiffres. Saisissez uniquement des chiffres et, éventuellement, un + au début. Sans indicatif international explicite, la recherche porte sur les chiffres saisis sans supposer de pays ; les indicatifs explicites restent distincts.",
+      "description": "Recherche les contacts à partir d'un numéro complet ou partiel d'au moins 3 chiffres. Les espaces, points et tirets sont normalisés ; tout groupe entre parenthèses, parenthèses comprises, est supprimé. Un + initial est autorisé.",
       "fields": {
         "phone_number": {
           "name": "Numéro de téléphone",
-          "description": "Au moins 3 chiffres ; uniquement des chiffres et éventuellement un + au début. Sans indicatif international explicite, aucun pays n'est supposé."
+          "description": "Au moins 3 chiffres après normalisation. Les espaces, points et tirets sont supprimés ; le contenu entre parenthèses, parenthèses comprises, est supprimé. Un + initial est autorisé."
         }
       }
     },

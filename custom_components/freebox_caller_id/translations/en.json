@@ -59,11 +59,11 @@
   "services": {
     "contact_by_number": {
       "name": "Find contact by phone number",
-      "description": "Search contacts using a full or partial number containing at least 3 digits. Enter digits only, optionally with a leading +. Without an explicit international prefix, the search uses the entered digits without assuming a country; explicit international calling codes remain distinct.",
+      "description": "Search contacts using a full or partial number containing at least 3 digits. Spaces, dots, and hyphens are normalized; any parenthesized group, including its parentheses, is removed. An initial + is allowed.",
       "fields": {
         "phone_number": {
           "name": "Phone number",
-          "description": "At least 3 digits; digits only, optionally with a leading +. Without an explicit international prefix, no country is assumed."
+          "description": "At least 3 digits after normalization. Spaces, dots, and hyphens are removed; all content inside parentheses, including the parentheses, is removed. An initial + is allowed."
         }
       }
     },
