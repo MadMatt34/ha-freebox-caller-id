@@ -222,6 +222,7 @@ async def test_zeroconf_flow_uses_existing_validation_and_authorization(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "authorize"
 
+
 async def test_user_flow_cannot_add_second_entry(
     hass: HomeAssistant,
 ) -> None:
