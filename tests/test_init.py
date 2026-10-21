@@ -201,18 +201,41 @@ async def test_async_setup_entry_propagates_config_entry_not_ready(
 async def test_async_reload_entry(
     hass: HomeAssistant,
 ) -> None:
-    """Test integration reload callback."""
+    """Test that the reload callback schedules a config entry reload."""
     entry = _create_entry()
     entry.add_to_hass(hass)
 
     with patch.object(
         hass.config_entries,
-        "async_reload",
-        new=AsyncMock(),
-    ) as reload_entry:
+        "async_schedule_reload",
+    ) as schedule_reload:
         await async_reload_entry(hass, entry)
 
-    reload_entry.assert_awaited_once_with(entry.entry_id)
+    schedule_reload.assert_called_once_with(entry.entry_id)
+
+
+async def test_update_listener_reloads_entry_after_data_change(
+    hass: HomeAssistant,
+) -> None:
+    """Test that a config entry update schedules a reload through its listener."""
+    entry = _create_entry()
+    entry.add_to_hass(hass)
+    entry.add_update_listener(async_reload_entry)
+
+    with patch.object(
+        hass.config_entries,
+        "async_schedule_reload",
+    ) as schedule_reload:
+        hass.config_entries.async_update_entry(
+            entry,
+            data={
+                **entry.data,
+                CONF_HOST: "192.168.1.253",
+            },
+        )
+        await hass.async_block_till_done()
+
+    schedule_reload.assert_called_once_with(entry.entry_id)
 
 
 async def test_async_unload_entry(

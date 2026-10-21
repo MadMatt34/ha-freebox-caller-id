@@ -121,7 +121,7 @@ class FreeboxCallerIDConfigFlow(
                         errors["base"] = "cannot_connect"
 
                     if not errors:
-                        return self.async_update_reload_and_abort(
+                        return self.async_update_and_abort(
                             entry,
                             data_updates={CONF_HOST: host},
                         )
@@ -434,7 +434,7 @@ class FreeboxCallerIDConfigFlow(
                 if self.source == config_entries.SOURCE_REAUTH:
                     reauth_entry = self._get_reauth_entry()
 
-                    return self.async_update_reload_and_abort(
+                    return self.async_update_and_abort(
                         reauth_entry,
                         data_updates={
                             CONF_APP_TOKEN: self.app_token,

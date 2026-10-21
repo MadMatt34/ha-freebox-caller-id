@@ -86,8 +86,8 @@ async def async_reload_entry(
     hass: HomeAssistant,
     entry: FreeboxConfigEntry,
 ) -> None:
-    """Reload the integration after options have changed."""
-    await hass.config_entries.async_reload(entry.entry_id)
+    """Schedule a reload after the config entry is updated."""
+    hass.config_entries.async_schedule_reload(entry.entry_id)
 
 
 async def async_unload_entry(
