@@ -1068,6 +1068,161 @@ async def test_authorize_granted_without_unique_id_aborts(
     assert result["reason"] == "auth_failed"
 
 
+async def test_reconfigure_flow_form_uses_current_host(
+    hass: HomeAssistant,
+) -> None:
+    """Test that reconfiguration displays the current Freebox address."""
+    entry = _create_entry()
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_RECONFIGURE,
+            "entry_id": entry.entry_id,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reconfigure"
+
+    schema = result["data_schema"].schema
+    host_key = next(key for key in schema if getattr(key, "schema", None) == CONF_HOST)
+    assert host_key.default() == FREEBOX_HOST
+
+
+async def test_reconfigure_flow_updates_address_for_same_freebox(
+    hass: HomeAssistant,
+    aioclient_mock,
+) -> None:
+    """Test that reconfiguration updates the address without reauthorization."""
+    entry = _create_entry()
+    entry.add_to_hass(hass)
+    new_host = "192.168.1.253"
+    aioclient_mock.get(
+        f"http://{new_host}/api_version",
+        json={"uid": FREEBOX_UID},
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_RECONFIGURE,
+            "entry_id": entry.entry_id,
+        },
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={CONF_HOST: new_host},
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+
+    updated_entry = hass.config_entries.async_get_entry(entry.entry_id)
+    assert updated_entry is not None
+    assert updated_entry.data[CONF_HOST] == new_host
+    assert updated_entry.data[CONF_APP_TOKEN] == APP_TOKEN
+    assert updated_entry.data[CONF_SCAN_INTERVAL] == DEFAULT_SCAN_INTERVAL
+    assert len(hass.config_entries.async_entries(DOMAIN)) == 1
+
+
+async def test_reconfigure_flow_rejects_different_freebox(
+    hass: HomeAssistant,
+    aioclient_mock,
+) -> None:
+    """Test that reconfiguration cannot point an entry to another Freebox."""
+    entry = _create_entry()
+    entry.add_to_hass(hass)
+    new_host = "192.168.1.253"
+    aioclient_mock.get(
+        f"http://{new_host}/api_version",
+        json={"uid": "another-freebox-uid"},
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_RECONFIGURE,
+            "entry_id": entry.entry_id,
+        },
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={CONF_HOST: new_host},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reconfigure"
+    assert result["errors"] == {"base": "different_device"}
+
+    unchanged_entry = hass.config_entries.async_get_entry(entry.entry_id)
+    assert unchanged_entry is not None
+    assert unchanged_entry.data[CONF_HOST] == FREEBOX_HOST
+
+
+async def test_reconfigure_flow_rejects_empty_address(
+    hass: HomeAssistant,
+) -> None:
+    """Test that an empty address is rejected without changing the entry."""
+    entry = _create_entry()
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_RECONFIGURE,
+            "entry_id": entry.entry_id,
+        },
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={CONF_HOST: "   "},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reconfigure"
+    assert result["errors"] == {"base": "invalid_host"}
+
+    unchanged_entry = hass.config_entries.async_get_entry(entry.entry_id)
+    assert unchanged_entry is not None
+    assert unchanged_entry.data[CONF_HOST] == FREEBOX_HOST
+
+
+async def test_reconfigure_flow_reports_connection_error(
+    hass: HomeAssistant,
+    aioclient_mock,
+) -> None:
+    """Test that an unreachable Freebox address is rejected."""
+    entry = _create_entry()
+    entry.add_to_hass(hass)
+    new_host = "192.168.1.253"
+    aioclient_mock.get(
+        f"http://{new_host}/api_version",
+        exc=aiohttp.ClientError,
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_RECONFIGURE,
+            "entry_id": entry.entry_id,
+        },
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={CONF_HOST: new_host},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reconfigure"
+    assert result["errors"] == {"base": "cannot_connect"}
+
+    unchanged_entry = hass.config_entries.async_get_entry(entry.entry_id)
+    assert unchanged_entry is not None
+    assert unchanged_entry.data[CONF_HOST] == FREEBOX_HOST
+
+
 async def test_options_flow_defaults(
     hass: HomeAssistant,
 ) -> None:
