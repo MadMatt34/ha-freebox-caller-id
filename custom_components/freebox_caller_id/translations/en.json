@@ -15,7 +15,7 @@
     "step": {
       "user": {
         "title": "Connect to Freebox",
-        "description": "Enter your Freebox address. If you haven't changed it, leave the default value.",
+        "description": "Enter your Freebox address. If it was discovered automatically, the address is pre-filled; you can keep it or edit it. Otherwise, leave the default value.",
         "data": {
           "host": "Address (e.g., mafreebox.freebox.fr)"
         }
