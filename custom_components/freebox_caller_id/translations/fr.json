@@ -15,7 +15,7 @@
     "step": {
       "user": {
         "title": "Connexion à la Freebox",
-        "description": "Entrez l'adresse de votre Freebox. Si vous ne l'avez pas changée, laissez la valeur par défaut.",
+        "description": "Entrez l'adresse de votre Freebox. Si elle a été détectée automatiquement, l'adresse est préremplie : vous pouvez la conserver ou la modifier. Sinon, laissez la valeur par défaut.",
         "data": {
           "host": "Adresse (ex: mafreebox.freebox.fr)"
         }
