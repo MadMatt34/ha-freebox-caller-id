@@ -81,7 +81,7 @@ L'installation se fait **100 % via l'interface graphique** de Home Assistant.
    [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
 2. Cliquez sur **Ajouter une intégration** (en bas à droite).
 3. Recherchez **Freebox Caller ID** et sélectionnez-le.
-4. Laissez l'adresse IP / hôte par défaut (`mafreebox.freebox.fr`) et validez.
+4. Si Home Assistant détecte la Freebox sur le réseau local, son adresse est préremplie : conservez-la ou modifiez-la. Si aucune Freebox n'est détectée, saisissez ou conservez l'adresse par défaut (`mafreebox.freebox.fr`).
 
 ### Étape 2 : Validation physique sur le Freebox Server
 
