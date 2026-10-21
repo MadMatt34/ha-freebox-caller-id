@@ -151,8 +151,9 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
         # entity platform. After that, update only the existing device so
         # user-controlled fields such as area and name are left untouched.
         device_registry = dr.async_get(self.hass)
-        device = device_registry.async_get_device(
-            identifiers={(DOMAIN, self.entry_id)},
+        device = device_registry.async_get_device_by_identifier(
+            (DOMAIN, self.entry_id),
+            self.entry_id,
         )
 
         if device is not None:
@@ -452,7 +453,10 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                     if isinstance(contact, Mapping)
                 ]
 
-        except FreeboxContactApiError, FreeboxContactPermissionError:
+        except (
+            FreeboxContactApiError,
+            FreeboxContactPermissionError,
+        ):
             raise
         except (
             aiohttp.ClientError,
