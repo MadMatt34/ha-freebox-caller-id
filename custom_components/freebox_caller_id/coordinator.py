@@ -452,7 +452,10 @@ class FreeboxCallerCoordinator(DataUpdateCoordinator[FreeboxCallerData]):
                     if isinstance(contact, Mapping)
                 ]
 
-        except FreeboxContactApiError, FreeboxContactPermissionError:
+        except (
+            FreeboxContactApiError,
+            FreeboxContactPermissionError,
+        ):
             raise
         except (
             aiohttp.ClientError,
