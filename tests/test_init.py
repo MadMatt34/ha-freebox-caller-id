@@ -215,6 +215,31 @@ async def test_async_reload_entry(
     reload_entry.assert_awaited_once_with(entry.entry_id)
 
 
+async def test_update_listener_reloads_entry_after_data_change(
+    hass: HomeAssistant,
+) -> None:
+    """Test that a config entry update reloads through its update listener."""
+    entry = _create_entry()
+    entry.add_to_hass(hass)
+    entry.add_update_listener(async_reload_entry)
+
+    with patch.object(
+        hass.config_entries,
+        "async_reload",
+        new=AsyncMock(),
+    ) as reload_entry:
+        hass.config_entries.async_update_entry(
+            entry,
+            data={
+                **entry.data,
+                CONF_HOST: "192.168.1.253",
+            },
+        )
+        await hass.async_block_till_done()
+
+    reload_entry.assert_awaited_once_with(entry.entry_id)
+
+
 async def test_async_unload_entry(
     hass: HomeAssistant,
 ) -> None:
