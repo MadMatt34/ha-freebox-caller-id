@@ -32,6 +32,20 @@ Par défaut, l'[API Freebox OS](https://dev.freebox.fr/sdk/os/) n'émet aucun pu
 
 ---
 
+## 🔌 Modèles supportés
+
+La box doit fonctionner avec **Freebox OS**.
+
+Modèles de Freebox testés :
+
+- Freebox Delta :
+  - model fbxgw7r / firmware 4.13.1
+
+> [!NOTE]
+> N'hésitez pas à m'informer du modèle que vous utilisez.
+
+---
+
 ## 🧩 Installation
 
 ### Option 1 : Installation via HACS (dépôt inclus - 📌 recommandée)
@@ -366,6 +380,12 @@ En cas de redémarrage de la Freebox ou de mise à jour du firmware :
 
 ---
 
+## ⚠️ Limitations and problèmes connus
+
+- L'intégration dépend des APIs externes.
+
+---
+
 ## 🛠️ Dépannage
 
 - Vérifiez que votre Freebox est accessible sur le réseau local
@@ -376,6 +396,18 @@ En cas de redémarrage de la Freebox ou de mise à jour du firmware :
 > [!NOTE]
 > **Diagnostics & Vie privée :**\
 > Exportez vos fichiers de diagnostic en toute sécurité lors de l'ouverture d'un ticket sur GitHub ; vos jetons d'accès, identifiants et données personnelles (numéros de téléphone et noms des correspondants) sont automatiquement anonymisés.
+
+---
+
+## 🗑️ Supprimer l'intégration
+
+Pour supprimer l'intégration de Home Assistant 
+
+1. Aller dans **Paramètres** > **Appareils et services** et choisir la carte de l'intégration **Freebox Caller ID**.\
+   [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
+2. Dans la liste des appareils, pointer l'instance à supprimer.
+3. A côté de cette entrée, sélectionner le menu avec trois points ⋮\
+Puis, choisir **Supprimer**.
 
 ---
 

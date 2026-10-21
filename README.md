@@ -32,6 +32,20 @@ By default, the [Freebox OS API](https://dev.freebox.fr/sdk/os/) does not send p
 
 ---
 
+## 🔌 Supported models
+
+The box must be running with **Freebox OS**.
+
+Tested Freebox models :
+
+- Freebox Delta :
+  - model fbxgw7r / firmware 4.13.1
+
+> [!NOTE]
+> Feel free to inform me with the model you are using.
+
+---
+
 ## 🧩 Installation
 
 ### Option 1: HACS Installation (Included Repository - 📌 Recommended)
@@ -364,6 +378,12 @@ If your Freebox reboots or undergoes a firmware update:
 
 ---
 
+## ⚠️ Limitations and known issues
+
+- The integration depends on external APIs.
+
+---
+
 ## 🛠️ Troubleshooting
 
 - Verify that your Freebox is accessible on your local network.
@@ -374,6 +394,18 @@ If your Freebox reboots or undergoes a firmware update:
 > [!NOTE]
 > **Diagnostics & Privacy:**\
 > You can safely export diagnostic files when opening an issue on GitHub. Access tokens, credentials, and sensitive personal data (such as phone numbers and contact names) are automatically anonymized.
+
+---
+
+## 🗑️ Removing the integration
+
+To remove the integration from Home Assistant 
+
+1. Go to **Settings** > **Devices & Services** and select the integration card **Freebox Caller ID**.\
+   [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
+2. From the list of devices, select the instance to remove.
+3. Next to the entry, select the three dots menu ⋮\
+Then, select **Delete**.
 
 ---
 
