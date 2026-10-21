@@ -66,6 +66,79 @@ class FreeboxCallerIDConfigFlow(
         """Return the options flow."""
         return FreeboxCallerIDOptionsFlow()
 
+    async def async_step_reconfigure(
+        self,
+        user_input: dict[str, object] | None = None,
+    ) -> config_entries.ConfigFlowResult:
+        """Reconfigure the Freebox address."""
+        entry = self._get_reconfigure_entry()
+        current_host = entry.data.get(CONF_HOST, DEFAULT_HOST)
+        if not isinstance(current_host, str) or not current_host:
+            current_host = DEFAULT_HOST
+
+        host = current_host
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            host_value = user_input.get(CONF_HOST)
+            if not isinstance(host_value, str):
+                errors["base"] = "invalid_host"
+            else:
+                host = host_value.strip()
+                if not host:
+                    errors["base"] = "invalid_host"
+                else:
+                    session = async_get_clientsession(self.hass)
+
+                    try:
+                        async with session.get(
+                            f"http://{host}/api_version",
+                            timeout=REQUEST_TIMEOUT,
+                        ) as response:
+                            if response.status != 200:
+                                errors["base"] = "cannot_connect"
+                            else:
+                                raw_data = await response.json()
+
+                                if not isinstance(raw_data, dict):
+                                    errors["base"] = "cannot_connect"
+                                else:
+                                    uid = raw_data.get("uid")
+                                    if not isinstance(uid, str) or not uid:
+                                        errors["base"] = "cannot_connect"
+                                    elif uid != entry.unique_id:
+                                        errors["base"] = "different_device"
+
+                    except (
+                        aiohttp.ClientError,
+                        TimeoutError,
+                        ValueError,
+                    ) as err:
+                        _LOGGER.warning(
+                            "Unable to verify Freebox address during reconfiguration: %s",
+                            err,
+                        )
+                        errors["base"] = "cannot_connect"
+
+                    if not errors:
+                        return self.async_update_reload_and_abort(
+                            entry,
+                            data_updates={CONF_HOST: host},
+                        )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_HOST,
+                        default=host,
+                    ): str,
+                }
+            ),
+            errors=errors,
+        )
+
     async def async_step_reauth(
         self,
         entry_data: Mapping[str, object],

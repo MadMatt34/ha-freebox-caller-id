@@ -27,13 +27,22 @@
       "reauth_confirm": {
         "title": "[%key:common::config_flow::title::reauth%]",
         "description": "Freebox Caller ID needs to re-authenticate access to your Freebox."
+      },
+      "reconfigure": {
+        "title": "Change Freebox address",
+        "description": "Enter the new address for the same Freebox. The integration will verify its identity before updating the configuration.",
+        "data": {
+          "host": "Address (e.g., mafreebox.freebox.fr)"
+        }
       }
     },
     "error": {
       "cannot_connect": "Unable to connect to the Freebox.",
       "auth_failed": "The Freebox rejected the authorization request.",
       "pending_auth": "The authorization has not yet been confirmed on the Freebox.",
-      "auth_denied": "The authorization request was denied or expired."
+      "auth_denied": "The authorization request was denied or expired.",
+      "invalid_host": "Enter a valid Freebox address.",
+      "different_device": "This address points to a different Freebox. The configured device has not been changed."
     },
     "abort": {
       "already_configured": "This Freebox is already configured.",
