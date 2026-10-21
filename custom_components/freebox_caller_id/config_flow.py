@@ -11,6 +11,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 import voluptuous as vol
 
 from .const import (
@@ -268,6 +269,26 @@ class FreeboxCallerIDConfigFlow(
             )
 
         return await self.async_step_authorize()
+
+    async def async_step_zeroconf(
+        self,
+        discovery_info: ZeroconfServiceInfo,
+    ) -> config_entries.ConfigFlowResult:
+        """Prefill the initial form with the address found via mDNS."""
+        if self._async_current_entries():
+            return self.async_abort(reason="already_configured")
+
+        # Use the resolved local address rather than api_domain: this flow uses
+        # the local HTTP API at its standard port, not the advertised HTTPS port.
+        host = discovery_info.host
+        if ":" in host and not host.startswith("["):
+            host = f"[{host}]"
+        self.host = host
+        _LOGGER.debug("Discovered Freebox API via Zeroconf at %s", host)
+
+        # Keep address confirmation/editing and API validation in the existing
+        # user step; discovery must not start authorization on its own.
+        return await self.async_step_user()
 
     async def async_step_user(
         self,
