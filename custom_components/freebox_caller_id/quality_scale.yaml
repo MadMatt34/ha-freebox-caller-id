@@ -85,11 +85,8 @@ rules:
   entity-translations: done
   exception-translations: done
   icon-translations: done
-  reconfiguration-flow:
-    status: todo
-    comment: >-
-      Le flux d’options permet de modifier les intervalles, mais pas de reconfigurer l’adresse de la Freebox.
- repair-issues:
+  reconfiguration-flow: done
+  repair-issues:
     status: todo
     comment: >-
       La réauthentification existe, mais pas de mécanisme de réparations
