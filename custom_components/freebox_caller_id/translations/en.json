@@ -25,7 +25,7 @@
         "description": "1. Go to your Freebox Server unit.\n2. Press the **right arrow** on the display to approve the access request (HA CallerID).\n3. Return here and click **Submit**.\n\n⚠️ Important: In Freebox OS > Settings > Access Management > Applications, enable **Access to call log** and **Access to contact list**."
       },
       "reauth_confirm": {
-        "title": "[%key:common::config_flow::title::reauth%]",
+        "title": "Re-authenticate Freebox Caller ID",
         "description": "Freebox Caller ID needs to re-authenticate access to your Freebox."
       },
       "reconfigure": {
@@ -46,7 +46,7 @@
     },
     "abort": {
       "already_configured": "This Freebox is already configured.",
-      "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]"
+      "reauth_successful": "Re-authentication successful."
     }
   },
   "options": {

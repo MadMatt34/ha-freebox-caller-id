@@ -25,7 +25,7 @@
         "description": "1. Allez devant votre boîtier Freebox Server.\n2. Appuyez sur la **flèche de droite** sur l'écran pour valider la demande d'accès (HA CallerID).\n3. Revenez ici et cliquez sur **Valider**.\n\n⚠️ Important : Dans Freebox OS > Paramètres > Gestion des accès > Applications, cochez **Accès au journal d'appels** et **Accès au carnet d'adresses**."
       },
       "reauth_confirm": {
-        "title": "[%key:common::config_flow::title::reauth%]",
+        "title": "Réauthentification de Freebox Caller ID",
         "description": "Freebox Caller ID doit réautoriser l'accès à votre Freebox."
       },
       "reconfigure": {
@@ -46,7 +46,7 @@
     },
     "abort": {
       "already_configured": "Cette Freebox est déjà configurée.",
-      "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]"
+      "reauth_successful": "La réauthentification a réussi."
     }
   },
   "options": {
