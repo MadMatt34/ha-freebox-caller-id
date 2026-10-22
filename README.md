@@ -28,6 +28,7 @@ By default, the [Freebox OS API](https://dev.freebox.fr/sdk/os/) does not send p
 - Store the caller's details in a **dedicated sensor** (`sensor.freebox_phone_last_call`), alongside a history of the last 10 calls.
 - Provide two actions to **search contacts** stored in your Freebox phonebook (`freebox_caller_id.contact_by_number` and `freebox_caller_id.contact_by_name`).
 - Work **100% locally** without any cloud dependency.
+- Detect IP/Host address of the Freebox.
 - Smoothly handle Freebox reboots.
 
 ---
@@ -50,14 +51,14 @@ Tested Freebox models :
 
 ### Option 1: HACS Installation (Included Repository - 📌 Recommended)
 
-1. Open **Freebox Caller ID** integration in **HACS** in Home Assistant.\
-    [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=MadMatt34&repository=ha-freebox-caller-id&category=integration)
+1. Searche and open **Freebox Caller ID** integration in **HACS** in Home Assistant.\
+    [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=MadMatt34&repository=ha-freebox-caller-id)
 2. Click **Download**, then restart Home Assistant.
 
 ### Option 2: HACS Installation (Custom Repository)
 
 1. Open **HACS** in Home Assistant.
-2. Click **Custom Repositories** (top right menu).
+2. Click the menu ⋮ *(three dots)* on top right, then select **Custom Repositories**.
 3. Add: `https://github.com/MadMatt34/ha-freebox-caller-id`
 4. Select category **Integration** and click **Add**.
 5. Find and download **Freebox Caller ID**.
@@ -76,11 +77,11 @@ Setup is performed **100% via the Home Assistant User Interface**.
 
 ### Step 1: Add the integration in Home Assistant
 
-1. In Home Assistant, go to **Settings** > **Devices & Services**.\
-   [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
+1. In Home Assistant, go to **Settings → Devices & Services**.\
+   [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=freebox_caller_id)
 2. Click **Add Integration** (bottom right).
 3. Search for **Freebox Caller ID** and select it.
-4. If Home Assistant discovers the Freebox on your local network, its address is pre-filled. Keep it or edit it. If no Freebox is detected, enter or keep the default host (`mafreebox.freebox.fr`).
+4. Leave the detected or default IP/Host (`mafreebox.freebox.fr`) and validate.
 
 ### Step 2: Physical approval on the Freebox Server
 
@@ -92,10 +93,22 @@ Setup is performed **100% via the Home Assistant User Interface**.
 ### Step 3: Grant permissions in Freebox OS
 
 1. Log in to your Freebox OS web interface: [http://mafreebox.freebox.fr](http://mafreebox.freebox.fr).
-2. Go to **Freebox Settings** > **Access Management** > **Applications** tab.
+2. Go to **Freebox Settings → Access Management → Applications** tab.
 3. Click on **HA CallerID**.
 4. Check the boxes for **Access to call log** (*Accès au journal d'appels*) and **Access to contact list** (*Accès au carnet d'adresses*).
 5. Click **Save**.
+
+---
+
+## 🔧 Reconfiguration
+
+You can reconfigure the Freebox address at any time:
+
+1. Go to **Settings → Devices & Services → Freebox Caller ID**.\
+    [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=freebox_caller_id)
+2. Click ⋮ the three dots menu of the device. Then, select **Reconfigure**.
+3. Enter the **new address** IP/Host of the Freebox.
+4. Save. The integration will reload automatically.
 
 ---
 
@@ -103,8 +116,9 @@ Setup is performed **100% via the Home Assistant User Interface**.
 
 You can adjust some settings at any time:
 
-1. Go to **Settings** > **Devices & Services**.
-2. On the **Freebox Caller ID** card, click **Configure**.
+1. Go to **Settings → Devices & Services → Freebox Caller ID**.\
+    [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=freebox_caller_id)
+2. Click **Configure** (button cog).
 3. Change the settings:
    - Polling frequency : **Scan interval** (between 1 and 60 seconds; 2 seconds recommended and as default)
    - Active ring timeout : **Maximum ringing duration** (between 1 and 180 seconds; 45 seconds as default)
@@ -165,7 +179,7 @@ An optional leading + is preserved for international numbers.
 
 Example action in an automation or script:
 
-```
+```yaml
 actions:
   - action: freebox_caller_id.contact_by_number
     data:
@@ -180,7 +194,7 @@ At least 3 characters are required.
 
 Example action in an automation or script:
 
-```
+```yaml
 actions:
   - action: freebox_caller_id.contact_by_name
     data:
@@ -196,7 +210,7 @@ For number searches, each result also includes matched_number, which identifies 
 
 Example response:
 
-```
+```json
 {
   "matches": [
     {
@@ -213,6 +227,7 @@ Example response:
   ]
 }
 ```
+
 > [!NOTE]
 > When no contact matches the query, or the query is shorter than the minimum length, or unsupported charaters are used, matches is an empty list.
 
@@ -389,7 +404,7 @@ If your Freebox reboots or undergoes a firmware update:
 - Verify that your Freebox is accessible on your local network.
 - Ensure Home Assistant can reach the Freebox host IP.
 - Check logs: **Settings → System → Logs**\
-[![Open your Home Assistant instance and show your Home Assistant logs.](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/)
+    [![Open your Home Assistant instance and show your Home Assistant logs.](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/)
 
 > [!NOTE]
 > **Diagnostics & Privacy:**\
@@ -399,13 +414,11 @@ If your Freebox reboots or undergoes a firmware update:
 
 ## 🗑️ Removing the integration
 
-To remove the integration from Home Assistant 
+To remove the integration from Home Assistant
 
-1. Go to **Settings** > **Devices & Services** and select the integration card **Freebox Caller ID**.\
-   [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
-2. From the list of devices, select the instance to remove.
-3. Next to the entry, select the three dots menu ⋮\
-Then, select **Delete**.
+1. Go to **Settings → Devices & Services → Freebox Caller ID**.\
+   [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=freebox_caller_id)
+2. Click ⋮ the three dots menu of the device. Then, select **Delete**.
 
 ---
 
