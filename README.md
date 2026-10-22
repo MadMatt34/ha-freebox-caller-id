@@ -28,7 +28,7 @@ By default, the [Freebox OS API](https://dev.freebox.fr/sdk/os/) does not send p
 - Store the caller's details in a **dedicated sensor** (`sensor.freebox_phone_last_call`), alongside a history of the last 10 calls.
 - Provide two actions to **search contacts** stored in your Freebox phonebook (`freebox_caller_id.contact_by_number` and `freebox_caller_id.contact_by_name`).
 - Work **100% locally** without any cloud dependency.
-- Detect IP/Host address of the Freebox.
+- **Automatically detect** IP/Host address of the Freebox (zeroconf).
 - Smoothly handle Freebox reboots.
 
 ---

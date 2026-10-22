@@ -28,7 +28,7 @@ Par défaut, l'[API Freebox OS](https://dev.freebox.fr/sdk/os/) n'émet aucun pu
 - Conserve les données de l'appelant dans un **capteur dédié** (`sensor.freebox_phone_dernier_appel`), et l'historique des 10 derniers appels.
 - Met à disposition deux actions permettant de **rechercher des contacts** enregistrés dans le répertoire de votre Freebox (`freebox_caller_id.contact_by_number` et `freebox_caller_id.contact_by_name`).
 - Fonctionne en **local**, sans cloud.
-- Détecte l'adresse IP/Hôte de la Freebox.
+- **Détecte automatiquement** l'adresse IP/Hôte de la Freebox (zeroconf).
 - Gère de manière transparente les redémarrages de la Freebox.
 
 ---
