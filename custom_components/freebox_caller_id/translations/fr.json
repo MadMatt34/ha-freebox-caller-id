@@ -15,14 +15,14 @@
     "step": {
       "user": {
         "title": "Connexion à la Freebox",
-        "description": "Entrez l'adresse de votre Freebox. Si vous ne l'avez pas changée, laissez la valeur par défaut.",
+        "description": "Entrez l'adresse de votre Freebox. Vous pouvez laisser l'adresse préremplie ; elle est détectée automatiquement ou est une valeur par défaut.",
         "data": {
           "host": "Adresse (ex: mafreebox.freebox.fr)"
         }
       },
       "authorize": {
         "title": "Validation sur la Freebox",
-        "description": "1. Allez devant votre boîtier Freebox Server.\n2. Appuyez sur la **flèche de droite** sur l'écran pour valider la demande d'accès (HA CallerID).\n3. Revenez ici et cliquez sur **Valider**.\n\n⚠️ Important : Dans Freebox OS > Paramètres > Gestion des accès > Applications, cochez **Accès au journal d'appels** pour la détection des appels. Pour utiliser les actions de recherche de contacts, activez également **Accès au carnet d'adresses**."
+        "description": "1. Allez devant votre boîtier Freebox Server.\n2. Appuyez sur la **flèche de droite** sur l'écran pour valider la demande d'accès (HA CallerID).\n3. Revenez ici et cliquez sur **Valider**.\n\n⚠️ Important : Dans Freebox OS > Paramètres > Gestion des accès > Applications, cochez **Accès au journal d'appels** et **Accès au carnet d'adresses**."
       },
       "reauth_confirm": {
         "title": "[%key:common::config_flow::title::reauth%]",

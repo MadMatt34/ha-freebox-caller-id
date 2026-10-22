@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from ipaddress import IPv4Address
+
 import aiohttp
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.freebox_caller_id.config_flow import FreeboxCallerIDConfigFlow
@@ -31,6 +34,7 @@ REAUTH_TRACK_ID = "reauth-track-id"
 def _register_freebox_api(
     aioclient_mock,
     *,
+    host: str = FREEBOX_HOST,
     api_version_status: int = 200,
     api_version_json: dict[str, object] | None = None,
     authorize_status: int = 200,
@@ -39,7 +43,7 @@ def _register_freebox_api(
     authorization_json: dict[str, object] | None = None,
 ) -> None:
     """Register mocked Freebox config-flow endpoints."""
-    base_url = f"http://{FREEBOX_HOST}"
+    base_url = f"http://{host}"
 
     aioclient_mock.get(
         f"{base_url}/api_version",
@@ -98,6 +102,20 @@ async def _submit_host(
         user_input={
             CONF_HOST: FREEBOX_HOST,
         },
+    )
+
+
+def _create_discovery_info(host: str = FREEBOX_HOST) -> ZeroconfServiceInfo:
+    """Create a Freebox Zeroconf service-info object for tests."""
+    address = IPv4Address(host)
+    return ZeroconfServiceInfo(
+        ip_address=address,
+        ip_addresses=[address],
+        port=80,
+        hostname="freebox.local.",
+        type="_fbx-api._tcp.local.",
+        name="Freebox._fbx-api._tcp.local.",
+        properties={"uid": FREEBOX_UID},
     )
 
 
@@ -164,6 +182,54 @@ async def test_user_flow_uses_default_host(
     host_key = next(key for key in schema if getattr(key, "schema", None) == CONF_HOST)
 
     assert host_key.default() == DEFAULT_HOST
+
+
+async def test_zeroconf_flow_prefills_editable_host(
+    hass: HomeAssistant,
+) -> None:
+    """Test that Zeroconf discovery pre-populates the editable address field."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_ZEROCONF},
+        data=_create_discovery_info(),
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+    schema = result["data_schema"].schema
+    host_key = next(key for key in schema if getattr(key, "schema", None) == CONF_HOST)
+    assert host_key.default() == FREEBOX_HOST
+
+
+async def test_zeroconf_flow_uses_existing_validation_and_authorization(
+    hass: HomeAssistant,
+    aioclient_mock,
+) -> None:
+    """Test that the discovered address can be edited before normal setup."""
+    new_host = "192.168.1.253"
+    _register_freebox_api(aioclient_mock, host=new_host)
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_ZEROCONF},
+        data=_create_discovery_info(),
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={CONF_HOST: new_host},
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "authorize"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_HOST] == new_host
 
 
 async def test_user_flow_cannot_add_second_entry(
