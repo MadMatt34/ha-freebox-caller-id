@@ -51,13 +51,8 @@ rules:
   discovery-update-info:
     status: exempt
     comment: >-
-      The integration does not support discovery; the user must provide the
-      Freebox address.
-  discovery:
-    status: exempt
-    comment: >-
-      The integration does not support discovery; the user must provide the
-      Freebox address.
+      Discovery is done at initial setup; the user can reconfigure if the Freebox address has changed.
+  discovery: done
   docs-data-update: done
   docs-examples: done
   docs-known-limitations: done
