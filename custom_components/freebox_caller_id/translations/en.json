@@ -15,14 +15,14 @@
     "step": {
       "user": {
         "title": "Connect to Freebox",
-        "description": "Enter your Freebox address. If it was discovered automatically, the address is pre-filled; you can keep it or edit it. Otherwise, leave the default value.",
+        "description": "Enter your Freebox address. You can keep the pre-filled address; it is discovered automatically or is a default value.",
         "data": {
           "host": "Address (e.g., mafreebox.freebox.fr)"
         }
       },
       "authorize": {
         "title": "Freebox Authorization",
-        "description": "1. Go to your Freebox Server unit.\n2. Press the **right arrow** on the display to approve the access request (HA CallerID).\n3. Return here and click **Submit**.\n\n⚠️ Important: In Freebox OS > Settings > Access Management > Applications, enable **Access to call log** for call detection. To use the contact lookup actions, also enable **Access to contact list**."
+        "description": "1. Go to your Freebox Server unit.\n2. Press the **right arrow** on the display to approve the access request (HA CallerID).\n3. Return here and click **Submit**.\n\n⚠️ Important: In Freebox OS > Settings > Access Management > Applications, enable **Access to call log** and **Access to contact list**."
       },
       "reauth_confirm": {
         "title": "[%key:common::config_flow::title::reauth%]",
