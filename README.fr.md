@@ -4,7 +4,7 @@
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
 [![Quality scale](https://img.shields.io/badge/Quality%20scale-silver-silver)](https://www.home-assistant.io/docs/quality_scale/#-silver)
 [![HACS](https://img.shields.io/badge/HACS-Default-blue)](https://github.com/hacs/default)
-![Installs](https://img.shields.io/badge/dynamic/json?label=Installations&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha-freebox-caller-id.total)
+![Installs](https://img.shields.io/badge/dynamic/json?label=Installations&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.freebox_caller_id.total)
 \
 [![HACS Check](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hacs.yml)
 [![Hassfest Check](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-freebox-caller-id/actions/workflows/hassfest.yml)
