@@ -1,6 +1,10 @@
 {
   "domain": "freebox_caller_id",
   "name": "Freebox Caller ID",
+  "categories": [
+    "computers_network.routers_network",
+    "messaging_notifications.email_sms_calls"
+  ],
   "codeowners": [
     "@MadMatt34"
   ],
