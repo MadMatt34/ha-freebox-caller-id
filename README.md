@@ -24,6 +24,7 @@
 By default, the [Freebox OS API](https://dev.freebox.fr/sdk/os/) does not send push notifications when a phone rings. However, the Freebox immediately registers incoming calls in its call log (`/api/v4/call/log/`) upon the very first ring with a duration of `0`. This integration performs fast, asynchronous HTTP polling (every 2 seconds by default).
 
 - Fire a **native event** (`freebox_incoming_call`) on the first ring signal.
+- The **caller's name** is provided from your Freebox phonebook.
 - Turn on a **binary sensor** (`binary_sensor.freebox_phone_ringing`) while the phone is ringing, enriched with caller information.
 - Store the caller's details in a **dedicated sensor** (`sensor.freebox_phone_last_call`), alongside a history of the last 10 calls.
 - Provide two actions to **search contacts** stored in your Freebox phonebook (`freebox_caller_id.contact_by_number` and `freebox_caller_id.contact_by_name`).
@@ -37,37 +38,34 @@ By default, the [Freebox OS API](https://dev.freebox.fr/sdk/os/) does not send p
 
 The box must be running with **Freebox OS**.
 
-Tested Freebox models :
+Tested and validated Freebox models :
 
-- Freebox Delta :
-  - model fbxgw7r / firmware 4.13.1
+| Name | Model | Firmware |
+| --- | --- | --- |
+| Freebox Delta | fbxgw7r | 4.13.1 |
 
 > [!NOTE]
-> Feel free to inform me with the model you are using.
+> Feel free to inform me with the model you are using, whether it works or not: [open issue on GitHub](https://github.com/MadMatt34/ha-freebox-caller-id/issues/new).
 
 ---
 
 ## 🧩 Installation
 
-### Option 1: HACS Installation (Included Repository - 📌 Recommended)
+### Option 1: Marketplace Installation (📌 Recommended)
 
-1. Searche and open **Freebox Caller ID** integration in **HACS** in Home Assistant.\
-    [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=MadMatt34&repository=ha-freebox-caller-id)
-2. Click **Download**, then restart Home Assistant.
+1. Open **Freebox Caller ID** integration in **Marketplace** in Home Assistant.\
+    [![Open your Home Assistant instance and open a repository in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=MadMatt34&repository=ha-freebox-caller-id)
+2. Click **Install**, then follow Integration Setup steps.
 
-### Option 2: HACS Installation (Custom Repository)
+### Option 2: Manual Installation
 
-1. Open **HACS** in Home Assistant.
-2. Click the menu ⋮ *(three dots)* on top right, then select **Custom Repositories**.
-3. Add: `https://github.com/MadMatt34/ha-freebox-caller-id`
-4. Select category **Integration** and click **Add**.
-5. Find and download **Freebox Caller ID**.
-6. Restart Home Assistant.
-
-### Option 3: Manual Installation
-
-1. Copy the `freebox_caller_id` folder into your `/config/custom_components/` directory.
-2. Restart Home Assistant to detect the new integration.
+1. Dowload the last **Release** from this repository.
+2. Copy the `freebox_caller_id` folder into your `/config/custom_components/` directory.
+3. Restart Home Assistant to detect the new integration.
+4. After restart HA, go to **Settings → Devices & Services**.\
+   [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=freebox_caller_id)
+5. Click **Add Integration** (bottom right).
+6. Search for **Freebox Caller ID** and select it, then follow Integration Setup steps
 
 ---
 
@@ -75,13 +73,9 @@ Tested Freebox models :
 
 Setup is performed **100% via the Home Assistant User Interface**.
 
-### Step 1: Add the integration in Home Assistant
+### Step 1: Add the Freebox in the integration
 
-1. In Home Assistant, go to **Settings → Devices & Services**.\
-   [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=freebox_caller_id)
-2. Click **Add Integration** (bottom right).
-3. Search for **Freebox Caller ID** and select it.
-4. Leave the detected or default IP/Host (`mafreebox.freebox.fr`) and validate.
+1. Leave the detected or default IP/Host (`mafreebox.freebox.fr`) and validate.
 
 ### Step 2: Physical approval on the Freebox Server
 
@@ -393,9 +387,15 @@ If your Freebox reboots or undergoes a firmware update:
 
 ---
 
+## 🏆 Integration's Quality
+
+The integration is developed against Home Assistant's [Integration Quality Scale](https://contributors.home-assistant.io/core/quality-scale/rules/): every rule is tracked in the file [quality_scale.yaml](custom_components/freebox_caller_id/quality_scale.yaml), and CI enforces strict typing, linting, and all technical and functional tests on every change.
+
+---
+
 ## ⚠️ Limitations and known issues
 
-- The integration depends on external APIs.
+- The integration depends on Freebox APIs.
 
 ---
 
@@ -403,8 +403,10 @@ If your Freebox reboots or undergoes a firmware update:
 
 - Verify that your Freebox is accessible on your local network.
 - Ensure Home Assistant can reach the Freebox host IP.
+- Verify that the integration has the necessary permissions in Freebox OS *(see step 3 of the setup)*.
 - Check logs: **Settings → System → Logs**\
     [![Open your Home Assistant instance and show your Home Assistant logs.](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/)
+- If necessary, [open issue on GitHub](https://github.com/MadMatt34/ha-freebox-caller-id/issues/new) and provide as much information as possible to help with the investigation.
 
 > [!NOTE]
 > **Diagnostics & Privacy:**\
@@ -428,6 +430,22 @@ To remove the integration from Home Assistant
 
 ---
 
-### CREDITS
+## ❤️ Support this project
+
+Find this integration useful? Give it a ⭐ on GitHub.
+
+---
+
+## ⚖️ License
+
+This project is under the **MIT License**; see the [LICENSE](LICENSE) file for details.
+
+---
+
+### *Disclaimer*
+
+*This is an unofficial integration and is not affiliated with, endorsed by, or supported by Free.*
+
+### *Credits*
 
 *Inspired by [https://github.com/jystervinou/freebox-caller-id](https://github.com/jystervinou/freebox-caller-id) and largely built with AI support.*
