@@ -18,7 +18,7 @@
   "requirements": [
     "phonenumberslite==9.0.41"
   ],
-  "version": "1.6.4",
+  "version": "1.6.6",
   "zeroconf": [
     "_fbx-api._tcp.local."
   ]
