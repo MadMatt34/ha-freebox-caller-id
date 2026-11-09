@@ -245,6 +245,61 @@ async def test_user_flow_cannot_add_second_entry(
     assert result["reason"] == "already_configured"
 
 
+async def test_zeroconf_flow_cannot_add_second_entry(
+    hass: HomeAssistant,
+) -> None:
+    """Test that Zeroconf cannot add a second config entry."""
+    entry = _create_entry()
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_ZEROCONF},
+        data=_create_discovery_info(),
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    assert len(hass.config_entries.async_entries(DOMAIN)) == 1
+
+
+async def test_user_flow_rechecks_single_entry_before_creation(
+    hass: HomeAssistant,
+    aioclient_mock,
+) -> None:
+    """Test that an in-progress flow cannot create a second entry."""
+    _register_freebox_api(aioclient_mock)
+
+    result = await _start_flow(hass)
+    result = await _submit_host(hass, result["flow_id"])
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "authorize"
+
+    # Simulate another setup flow completing while this one is waiting
+    # for authorization. Use a different UID to exercise the global limit.
+    other_entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Another Freebox",
+        unique_id="another-freebox-uid",
+        data={
+            CONF_HOST: "192.168.1.253",
+            CONF_APP_TOKEN: APP_TOKEN,
+            CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
+        },
+    )
+    other_entry.add_to_hass(hass)
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    assert len(hass.config_entries.async_entries(DOMAIN)) == 1
+
+
 async def test_user_flow_api_version_http_error(
     hass: HomeAssistant,
     aioclient_mock,
