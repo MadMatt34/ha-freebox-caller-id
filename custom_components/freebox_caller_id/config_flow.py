@@ -468,6 +468,12 @@ class FreeboxCallerIDConfigFlow(
                     CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
                 }
 
+                # A second flow may have started before another entry was
+                # created. Enforce the single-entry constraint again at the
+                # point where the entry would actually be created.
+                if self._async_current_entries():
+                    return self.async_abort(reason="already_configured")
+
                 return self.async_create_entry(
                     title="Freebox Caller ID",
                     data=entry_data,
