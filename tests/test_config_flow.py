@@ -242,7 +242,7 @@ async def test_user_flow_cannot_add_second_entry(
     result = await _start_flow(hass)
 
     assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "already_configured"
+    assert result["reason"] == "single_instance_allowed"
 
 
 async def test_zeroconf_flow_cannot_add_second_entry(
@@ -259,7 +259,7 @@ async def test_zeroconf_flow_cannot_add_second_entry(
     )
 
     assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "already_configured"
+    assert result["reason"] == "single_instance_allowed"
     assert len(hass.config_entries.async_entries(DOMAIN)) == 1
 
 
